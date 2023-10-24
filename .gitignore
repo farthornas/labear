@@ -1,7 +1,11 @@
 data/
 .ipynb_checkpoints/
 .DS_Store
-
+urbansound8K
+junk
+kivy/__pycache__
+*.wav
+__pycache__
 # speechbrain dirs
 models/
 audio_cache
