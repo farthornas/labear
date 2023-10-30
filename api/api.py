@@ -14,10 +14,18 @@ def submit(
     time_stamp: int = Form(...),
     files: List[UploadFile] = File(...),
 ):
-    return {
-        "JSON Payload ": {"user_id": user_id, "class_id": class_id, "time_stamp": time_stamp},
+    for file in files:
+        file.write('test.wav')
+    
+    submitted = {
+        "JSON Payload ": {"user_id": user_id, "class_id": class_id, "time_stamp": time_stamp, "files_size":[file.size for file in files]},
         "Filenames": [file.filename for file in files],
     }
+
+    
+    
+
+    return submitted
 
 @app.get("/", response_class=HTMLResponse)
 def main(request: Request):
