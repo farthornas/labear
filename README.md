@@ -6,6 +6,9 @@ Code is based on this article: https://towardsdatascience.com/audio-deep-learnin
 
 Links to dataset and metadata can be found in the article. The dataset/metadata will be expanded upon with sounds from home/labs/etc. We should find a place to store this which we can both access. For recordings I've used the app Voice Recorder (V 3.19) which records .wav format to my phone. 
 
+## Getting up and running
+To install all dependencies run "pip install -e .". This runs the setup.py file which should take care of the rest. 
+
 ## Structure of data directory 
 The `appliances` directory is structured in such a way that the label of each sound is defined by the parent directory. 
 
@@ -15,6 +18,14 @@ data
 │   ├── dehumidifier
 │   ├── gas_boiler
 │   └── lesker_system
+├── mon-appliances
+│   ├── mon__xxx_#1
+│   ├── mon__xxx_#2
+│   ├── mon__xxx_#n
+├── raw_appliances
+│   ├── raw__xxx_#1
+│   ├── raw__xxx_#2
+│   ├── raw__xxx_#n
 └── urbansound8k
     ├── UrbanSound8K.csv
     ├── fold1
@@ -28,9 +39,30 @@ data
     ├── fold8
     └── fold9
 ```
+## Principle pipeline
+The purpose of the project is to use old but functional 
+mobile phones to act as sound sensors in detecting the pressence or malfuncioning of an appliance. Sound samples from the phones will be analysed by an ML algorithm to detect abnormalities in the appliance  soundscape and the result will be presented as key metrics on a dashboard. Each user will build up a bank of appliances of their own choise by supplying recordings of the chosen appliance which the algoritm will train-on to detect key features. Each appliance in the users bank will then be available for continous monitoring. 
+
+Sound capture (KIVY):
+
+    Sound will be captured using the user operated kivy app running on the old smart phone used as the sensor device/endpoint. The user will register a user profile which will hold the users sound-bank of learned appliances and link to the users dashboard. 
+
+    Sound is captured in two operational modes:
+        
+        For a longer duration (several minutes) at multiple spatial and  temporal positions in preparation for training the ML algorithm to detect a new sound.
+
+        For a short duration (a few seconds) in order to monitor the state of the learned and monitored appliance. 
+    
+    After the sound has been captured the data will be uploaded to a server using the API.
+
+Data Transfer (FastAPI):
+
+
+Data processing
+Monitoring 
 ## Data processing.
 applience_ears.ipynb contains the class AudioUtil which contains methods for pre-processing the data into 
-a processable chunks for the deep-learning algorithm. 
+a processable chunks for the ml-algorithm. 
 
 ## A note on synthetic data generation.
 Appliances datasets are currently small reducing the amount of traning and validation data available for the algorithm. 
