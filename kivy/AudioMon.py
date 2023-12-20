@@ -5,26 +5,37 @@ from kivy.properties import ObjectProperty
 import requests
 from eartools.eartools import Recording
 from kivy.clock import Clock
+from functools import partial
 
 has_recording = False
 
-URL = 'http://127.0.0.1:8000/submit'
+URL_NEW = 'http://127.0.0.1:8000/submit'
+URL_MON = 'http://127.0.0.1:8000/mon'
 class MenuScreen(Screen):
     pass
 
 
-class LearnNew(Screen):
+def upload_file(recording, url):
+    file_labeled = recording.rename_rec()
+    files = [('files', open(file_labeled, 'rb'))]
+    payload = recording.get_rec_details()
+    resp = requests.post(url=url, files=files, data=payload)
+    return resp.json()
+
+
+
+class Rec(Screen):
     def __init__(self, **kwargs):
-        super(LearnNew, self).__init__(**kwargs)
-    has_recording = False
-    upload_state = 'Audio Not Uploaded'
+        super(Rec, self).__init__(**kwargs)
+        self.has_recording = False
+        self.upload_state = 'Audio Not Uploaded'
     
     audio = ObjectProperty()
     def on_enter(self, *args):
         self.update_labels()
         return super().on_enter(*args)
 
-    def start_recording(self):
+    def record(self):
         state = self.audio.state
         if state == 'ready':
             self.audio.start()
@@ -34,7 +45,7 @@ class LearnNew(Screen):
         self.upload_state = 'Audio Not Uploaded'
         self.update_labels() 
 
-    def start_playing(self):
+    def playback(self):
         state = self.audio.state
         
         if state == 'playing':
@@ -50,11 +61,8 @@ class LearnNew(Screen):
         if self.has_recording == True and state == 'ready':
             file_Sd = self.audio.file_path.split("file://")[1]
             recording = Recording(audio_file=file_Sd, user_id='test_id', class_id=11)
-            file_labeled = recording.rename_rec()
-            files = [('files', open(file_labeled, 'rb'))]
-            payload = recording.get_rec_details()
-            resp = requests.post(url=URL, files=files, data=payload)
-            print(resp.json())
+            resp = upload_file(recording, URL_NEW)
+            print(resp)
             self.upload_state = 'upload_complete'
             self.has_recording = False
         self.update_labels()
@@ -98,23 +106,55 @@ class LearnNew(Screen):
 class Monitor(Screen):
     def __init__(self, **kwargs):
         super(Monitor, self).__init__(**kwargs)
-    has_recording = False
-    monitoring = False
+    #has_recording = False
+        self.monitoring = False
 
-    upload_state = 'Audio Not Uploaded'
-    monitor_state = 'Not monitoring'
+    #upload_state = 'Audio Not Uploaded'
+        self.monitor_state = 'Not monitoring'
     
-    audio = ObjectProperty()
-    def on_enter(self, *args):
-        self.update_labels()
-        return super().on_enter(*args)
+    #audio = ObjectProperty()
+    #def on_enter(self, *args):
+    #    self.update_labels()
+    #    return super().on_enter(*args)
 
-    def start_monitoring(self):
+    def callback_upload(self, *largs):
+        #if self.has_recording == True and state == 'ready':
+        self.audio.stop()
+        file_Sd = self.audio.file_path.split("file://")[1]
+        recording = Recording(audio_file=file_Sd, user_id='test_id', class_id=11)
+        resp = upload_file(recording, URL_MON)
+        print(resp)
+
+    def callback_monitor(self, *largs):
+        self.audio.start()
+        self.event_upload = Clock.schedule_once(partial(self.callback_upload), 5)
+
+    def monitor(self):
         state = self.audio.state
-        self.monitoring = not self.monitoring
+        #self.monitoring = True
         self.upload_state = 'Audio Not Uploaded'
-        self.monitor_state = 'Monitoring'
-        self.update_labels() 
+        if self.monitoring:
+            self.stop_monitor()
+        else:
+            self.monitoring = True
+            self.monitor_state = 'Monitoring'
+            self.audio.start()
+            self.event_upload = Clock.schedule_once(partial(self.callback_upload), 5)
+            self.event_monitor = Clock.schedule_interval(partial(self.callback_monitor), 20)
+        self.update_labels()
+
+
+    def stop_monitor(self):
+        
+        if self.monitoring:
+            self.monitor_state = 'Not Monitoring'
+        self.monitoring = False
+        self.audio.stop()
+        self.event_monitor.cancel()
+        self.event_upload.cancel()
+        self.update_labels()
+
+
 
 
     def update_labels(self):
@@ -147,7 +187,7 @@ class Monitor(Screen):
 # Create the screen manager
 sm = ScreenManager()
 sm.add_widget(MenuScreen(name='menu'))
-sm.add_widget(LearnNew(name='learn'))
+sm.add_widget(Rec(name='learn'))
 sm.add_widget(Monitor(name='monitor'))
 
 
