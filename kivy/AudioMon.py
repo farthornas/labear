@@ -4,13 +4,12 @@ from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.properties import ObjectProperty
 import requests
 from eartools.eartools import Recording
+from eartools.eartools import URL_MON, URL_LEARN
 from kivy.clock import Clock
 from functools import partial
 
 has_recording = False
 
-URL_NEW = 'http://127.0.0.1:8000/submit'
-URL_MON = 'http://127.0.0.1:8000/mon'
 class MenuScreen(Screen):
     pass
 
@@ -28,7 +27,7 @@ class Rec(Screen):
     def __init__(self, **kwargs):
         super(Rec, self).__init__(**kwargs)
         self.has_recording = False
-        self.upload_state = 'Audio Not Uploaded'
+        self.monitor_state = 'Monitor not running'
     
     audio = ObjectProperty()
     def on_enter(self, *args):
@@ -61,7 +60,7 @@ class Rec(Screen):
         if self.has_recording == True and state == 'ready':
             file_Sd = self.audio.file_path.split("file://")[1]
             recording = Recording(audio_file=file_Sd, user_id='test_id', class_id=11)
-            resp = upload_file(recording, URL_NEW)
+            resp = upload_file(recording, URL_LEARN)
             print(resp)
             self.upload_state = 'upload_complete'
             self.has_recording = False
@@ -153,9 +152,6 @@ class Monitor(Screen):
         self.event_monitor.cancel()
         self.event_upload.cancel()
         self.update_labels()
-
-
-
 
     def update_labels(self):
         monitor_button = self.ids['monitor_button']
