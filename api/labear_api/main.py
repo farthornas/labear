@@ -1,6 +1,7 @@
 from typing import List
 
 from fastapi import FastAPI, File, UploadFile, Form
+import uvicorn
 import os
 import aiofiles
 from dataclasses import dataclass
@@ -95,3 +96,11 @@ async def monitor(
     metrics.post(metr, MONITOR)
     
     return submitted
+
+@app.get("/")
+async def root():
+    return {"message": "Hello World"}
+
+def start():
+    """Launched with `poetry run start` at root level"""
+    uvicorn.run("labear_api.main:app", host="0.0.0.0", port=8000, reload=True)
