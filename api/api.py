@@ -1,15 +1,53 @@
 from typing import List
 
-from fastapi import FastAPI, File, UploadFile, Form, Request
-from fastapi.responses import HTMLResponse
-from fastapi.templating import Jinja2Templates
-import os.path, os
-from eartools.eartools import RAW_FILES, MON_FILES, LEARN, MONITOR
-from eartools.eartools import Metrics
+from fastapi import FastAPI, File, UploadFile, Form
+import os
 import aiofiles
+from dataclasses import dataclass
+from influxdb_client_3 import InfluxDBClient3, Point
+from influxdb_client.client.write_api import SYNCHRONOUS, ASYNCHRONOUS
+
+
+#SERVER LOCATIONS
+RAW_FILES = 'data/raw_appliances/'
+MON_FILES = 'data/mon_appliances/'
+
+#API 
+URL = "http://127.0.0.1:8000"
+LEARN = '/learn'
+MONITOR = '/monitor'
+URL_LEARN = URL + LEARN
+URL_MON = URL + MONITOR
+
+#DASHBOARD
+TOKEN = "lxB5VtvRuEDCh2Q3ATSK6msJKaGpQ5kHuJomgGMFtpt8iM0gYDm--VO9ZlwOj47oxV11rttLN4KIE7JTrb2ELQ=="
+DEV = "Dev team"
+HOST = "https://us-east-1-1.aws.cloud2.influxdata.com"
+DATA_BASE = "metrics"
+POST_LEARN = '/learn'
+POST_MONITOR = '/monitor'
+
+
+@dataclass
+class Metrics:
+    token: str =  TOKEN
+    org: str = DEV
+    host: str = HOST
+    database: str = DATA_BASE
+    
+    
+    def __post_init__(self) -> None:
+        self.client = InfluxDBClient3(host=self.host, token=self.token, org=self.org, database=self.database)
+        
+
+    def post(self, data, application):
+        point = Point(application)
+        for key, value in data.items():
+            point.field(key, value)
+        self.client.write(record=point, write_precision="s", timeout=5)
+
 
 app = FastAPI()
-templates = Jinja2Templates(directory="templates")
 metrics = Metrics()
 
 
@@ -57,7 +95,3 @@ async def monitor(
     metrics.post(metr, MONITOR)
     
     return submitted
-
-@app.get("/", response_class=HTMLResponse)
-def main(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
