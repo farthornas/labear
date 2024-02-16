@@ -4,46 +4,6 @@ from os import rename
 import pandas as pd
 from dataclasses import dataclass, field
 from time import time
-from influxdb_client_3 import InfluxDBClient3, Point
-from influxdb_client.client.write_api import SYNCHRONOUS, ASYNCHRONOUS
-
-#DASHBOARD
-TOKEN = "lxB5VtvRuEDCh2Q3ATSK6msJKaGpQ5kHuJomgGMFtpt8iM0gYDm--VO9ZlwOj47oxV11rttLN4KIE7JTrb2ELQ=="
-DEV = "Dev team"
-HOST = "https://us-east-1-1.aws.cloud2.influxdata.com"
-DATA_BASE = "metrics"
-POST_LEARN = '/learn'
-POST_MONITOR = '/monitor'
-
-#SERVER LOCATIONS
-RAW_FILES = '../data/raw_appliances/'
-MON_FILES = '../data/mon_appliances/'
-
-#API 
-URL = "http://127.0.0.1:8000"
-LEARN = '/learn'
-MONITOR = '/monitor'
-URL_LEARN = URL + LEARN
-URL_MON = URL + MONITOR
-
-
-@dataclass
-class Metrics:
-    token: str =  TOKEN
-    org: str = DEV
-    host: str = HOST
-    database: str = DATA_BASE
-    
-    
-    def __post_init__(self) -> None:
-        self.client = InfluxDBClient3(host=self.host, token=self.token, org=self.org, database=self.database)
-        
-
-    def post(self, data, application):
-        point = Point(application)
-        for key, value in data.items():
-            point.field(key, value)
-        self.client.write(record=point, write_precision="s", timeout=5)
 
 def generate_timestamp() -> int: 
       return round(time() * 1000)

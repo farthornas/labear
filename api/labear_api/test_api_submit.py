@@ -1,9 +1,9 @@
 import requests
 
-file = 'test_submit.wav'
+file = 'data/test.wav'
 
 
-url = 'http://127.0.0.1:8000/submit'
+url = 'http://127.0.0.1:8000/monitor'
 #files = [('files', open('test_files/a.txt', 'rb')), ('files', open('test_files/b.txt', 'rb'))]
 files = [('files', open(file, 'rb'))]
 
