@@ -1,14 +1,87 @@
-from kivymd.app import MDApp
+from dataclasses import dataclass, field
+from functools import partial
 from kivy.lang.builder import Builder
+from kivy.clock import Clock
 from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.properties import ObjectProperty
+from kivymd.app import MDApp
+import os
+from os import rename
+import pandas as pd
 import requests
-from eartools.eartools import Recording
-from eartools.eartools import URL_MON, URL_LEARN
-from kivy.clock import Clock
-from functools import partial
+from time import time
+from torchaudio import load, save
+
+
+#API 
+URL = "http://127.0.0.1:8000"
+LEARN = '/learn'
+MONITOR = '/monitor'
+URL_LEARN = URL + LEARN
+URL_MON = URL + MONITOR
 
 has_recording = False
+
+def generate_timestamp() -> int: 
+      return round(time() * 1000)
+
+@dataclass
+class Recording:
+      audio_file: str
+      user_id: str
+      class_id: int
+      timestamp: int = field(init=False, default_factory=generate_timestamp)
+      file_label: str = field(init=False)
+
+      def __post_init__(self) -> None:
+            self.file_label = f"{self.user_id}_{self.class_id}_{self.timestamp}.wav"
+      
+      def rename_rec(self, new_name=None):
+            if new_name:
+                 self.file_label = new_name
+            rename(str(self.audio_file), str(self.file_label))
+            return self.file_label
+      
+      def get_rec_details(self):
+          return {"user_id": self.user_id, "class_id": self.class_id, "time_stamp": self.timestamp}
+      
+      def split_rec(self, split_length=3):
+          sig, sr = load(self.audio_file)
+          _, sig_len = sig.shape
+          length = sig_len / sr # length seconds
+          if os.path.isfile(self.metadata) == True:
+              df_temp = pd.read_csv(self.metadata)
+              d = df_temp.loc[(df_temp['classID'] == self.classID)]
+              fsid = int(d['fsID'].max()) + split_length
+          else:
+              fsid = 9000000
+  
+          for i in range(0, round(length), split_length):
+              fsid = fsid + i
+              split_fn = str(fsid) + '-' + str(self.classID) + '-0-0.wav'
+              csv_entry = {
+                  'slice_file_name' : [str(split_fn)],
+              '   fsID' : [fsid],
+                  'start': [float(i)],
+                  'end' : [float((i) + split_length)],
+                  'salience' : [0],
+                  'fold' : [self.directory],
+                  'classID' : [self.classID],
+                  'class' : [self.class_name]
+              }
+              df = pd.DataFrame(csv_entry)
+              if os.path.isfile(self.metadata) == True: 
+                  df.to_csv(self.metadata, mode='a', index=False, header=False)
+              else:
+                  df.to_csv(self.metadata, mode='a', index=False, header=True)
+  
+
+              split_start = i * sr
+              split_end = split_start + split_length * sr
+              sig = sig[:, split_start : split_end]
+              save(self.directory + '/' + split_fn, sig, sr)
+
+
 
 class MenuScreen(Screen):
     pass
