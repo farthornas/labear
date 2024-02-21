@@ -14,7 +14,7 @@ from torchaudio import load, save
 
 
 #API 
-URL = "http://127.0.0.1:8000"
+URL = "http://0.0.0.0:8000"
 LEARN = '/learn'
 MONITOR = '/monitor'
 URL_LEARN = URL + LEARN
