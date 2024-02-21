@@ -8,6 +8,8 @@ from dataclasses import dataclass
 from influxdb_client_3 import InfluxDBClient3, Point
 from influxdb_client.client.write_api import SYNCHRONOUS, ASYNCHRONOUS
 
+#%run ../notebooks/applience_ears.ipynb
+
 
 #SERVER LOCATIONS
 RAW_FILES = '../../data/raw_appliances/'
@@ -77,7 +79,6 @@ async def submit(
     files: List[UploadFile] = File(...),
 ):
     
-    #await file_handler(files, RAW_FILES)
     received_file(files)
 
     submitted = {
