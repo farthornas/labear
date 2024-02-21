@@ -10,8 +10,8 @@ from influxdb_client.client.write_api import SYNCHRONOUS, ASYNCHRONOUS
 
 
 #SERVER LOCATIONS
-RAW_FILES = 'data/raw_appliances/'
-MON_FILES = 'data/mon_appliances/'
+RAW_FILES = '../../data/raw_appliances/'
+MON_FILES = '../../data/mon_appliances/'
 
 #API 
 URL = "http://127.0.0.1:8000"
@@ -59,6 +59,14 @@ async def file_handler(files, path):
             content = await file.read()
             result = await out_file.write(content)
     return result
+
+def received_file(files):
+    print("Files received")
+    for file in files:
+        print(f"File name:{file.filename}")
+        print(f"File size:{file.size}")
+   
+
     
 
 @app.post(LEARN)
@@ -69,7 +77,8 @@ async def submit(
     files: List[UploadFile] = File(...),
 ):
     
-    await file_handler(files, RAW_FILES)
+    #await file_handler(files, RAW_FILES)
+    received_file(files)
 
     submitted = {
         "Payload": {"user_id": user_id, "class_id": class_id, "time_stamp": time_stamp, "files_size":[file.size for file in files],
@@ -86,7 +95,7 @@ async def monitor(
     time_stamp: int = Form(...),
     files: List[UploadFile] = File(...),
 ):
-    await file_handler(files, MON_FILES)
+    received_file(files)
     
     submitted = {
         "Payload": {"user_id": user_id, "class_id": class_id, "time_stamp": time_stamp, "files_size":[file.size for file in files],
