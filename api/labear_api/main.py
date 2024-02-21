@@ -95,7 +95,6 @@ async def monitor(
     time_stamp: int = Form(...),
     files: List[UploadFile] = File(...),
 ):
-    #await file_handler(files, MON_FILES)
     received_file(files)
     
     submitted = {

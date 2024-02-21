@@ -14,10 +14,7 @@ WORKDIR /app
 COPY pyproject.toml poetry.lock ./
 COPY labear_api ./labear_api
 
-RUN touch README.md
-
 RUN poetry install  
-
 
 EXPOSE 8000
 
