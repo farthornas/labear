@@ -8,7 +8,6 @@ from dataclasses import dataclass
 from influxdb_client_3 import InfluxDBClient3, Point
 from influxdb_client.client.write_api import SYNCHRONOUS, ASYNCHRONOUS
 
-#%run ../notebooks/applience_ears.ipynb
 
 
 #SERVER LOCATIONS
