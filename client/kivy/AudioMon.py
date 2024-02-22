@@ -10,8 +10,6 @@ from os import rename
 import pandas as pd
 import requests
 from time import time
-from torchaudio import load, save
-
 
 #API 
 URL = "http://0.0.0.0:8000"
@@ -44,42 +42,6 @@ class Recording:
       
       def get_rec_details(self):
           return {"user_id": self.user_id, "class_id": self.class_id, "time_stamp": self.timestamp}
-      
-      def split_rec(self, split_length=3):
-          sig, sr = load(self.audio_file)
-          _, sig_len = sig.shape
-          length = sig_len / sr # length seconds
-          if os.path.isfile(self.metadata) == True:
-              df_temp = pd.read_csv(self.metadata)
-              d = df_temp.loc[(df_temp['classID'] == self.classID)]
-              fsid = int(d['fsID'].max()) + split_length
-          else:
-              fsid = 9000000
-  
-          for i in range(0, round(length), split_length):
-              fsid = fsid + i
-              split_fn = str(fsid) + '-' + str(self.classID) + '-0-0.wav'
-              csv_entry = {
-                  'slice_file_name' : [str(split_fn)],
-              '   fsID' : [fsid],
-                  'start': [float(i)],
-                  'end' : [float((i) + split_length)],
-                  'salience' : [0],
-                  'fold' : [self.directory],
-                  'classID' : [self.classID],
-                  'class' : [self.class_name]
-              }
-              df = pd.DataFrame(csv_entry)
-              if os.path.isfile(self.metadata) == True: 
-                  df.to_csv(self.metadata, mode='a', index=False, header=False)
-              else:
-                  df.to_csv(self.metadata, mode='a', index=False, header=True)
-  
-
-              split_start = i * sr
-              split_end = split_start + split_length * sr
-              sig = sig[:, split_start : split_end]
-              save(self.directory + '/' + split_fn, sig, sr)
 
 
 
