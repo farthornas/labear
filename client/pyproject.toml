@@ -12,7 +12,6 @@ requests = "^2.31.0"
 Kivy = "^2.3.0"
 kivymd = "^1.2.0"
 pandas = "^2.2.0"
-torchaudio = "^2.2.0"
 plyer = "^2.1.0"
 pyobjus = "^1.2.3"
 
