@@ -77,7 +77,6 @@ async def submit(
     files: List[UploadFile] = File(...),
 ):
     
-    #await file_handler(files, RAW_FILES)
     received_file(files)
 
     submitted = {
