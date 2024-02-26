@@ -2,7 +2,7 @@ import requests
 
 file = 'test_submit.wav'
 
-url = 'http://0.0.0.0:8000/monitor'
+url = 'https://albinai.fly.dev/monitor'
 #files = [('files', open('test_files/a.txt', 'rb')), ('files', open('test_files/b.txt', 'rb'))]
 files = [('files', open(file, 'rb'))]
 

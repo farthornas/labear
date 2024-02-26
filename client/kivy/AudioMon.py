@@ -222,12 +222,15 @@ sm.add_widget(Rec(name='learn'))
 sm.add_widget(Monitor(name='monitor'))
 
 
-class DemoApp(MDApp):
+class LabearApp(MDApp):
 
     def build(self):
         #screen = Builder.load_string(screen_helper)
+        self.icon = "app_images/icon3.png"
+        
         screen = Builder.load_file("AudioMon.kv") 
+
         return screen
 
 
-DemoApp().run()
+LabearApp().run()
