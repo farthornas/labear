@@ -18,14 +18,6 @@ data
 │   ├── dehumidifier
 │   ├── gas_boiler
 │   └── lesker_system
-├── mon-appliances
-│   ├── mon__xxx_#1
-│   ├── mon__xxx_#2
-│   ├── mon__xxx_#n
-├── raw_appliances
-│   ├── raw__xxx_#1
-│   ├── raw__xxx_#2
-│   ├── raw__xxx_#n
 └── urbansound8k
     ├── UrbanSound8K.csv
     ├── fold1
@@ -39,6 +31,12 @@ data
     ├── fold8
     └── fold9
 ```
+
+The appliance dataset can be downloaded through this link: https://drive.google.com/drive/folders/1-uixxV5xjxZHXrLLUJfmqVI0KperjJce?usp=drive_link
+
+The urbansound8K dataset can be downloaded here: https://urbansounddataset.weebly.com/urbansound8k.html
+
+
 ## Principle pipeline
 The purpose of the project is to use old but functional 
 mobile phones to act as sound sensors in detecting the pressence or malfuncioning of an appliance. Sound samples from the phones will be analysed by an ML algorithm to detect abnormalities in the appliance  soundscape and the result will be presented as key metrics on a dashboard. Each user will build up a bank of appliances of their own choise by supplying recordings of the chosen appliance which the algoritm will train-on to detect key features. Each appliance in the users bank will then be available for continous monitoring. 
