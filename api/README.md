@@ -46,10 +46,20 @@ Fly.io needs to be installed first by running:
 
 `brew install flyctl`
 
-You will need to sign up and sign in to use Fly.io  - follow the link to do this (https://fly.io/docs/hands-on/sign-up/). 
+You will need to sign up and sign in to use Fly.io  - follow the link to do this (https://fly.io/docs/hands-on/sign-up/).
+
+If fly.io is installed, you can log into the instance by doing:
+
+`flyctl auth login --email <email_string> --password <password>`
+
+Check if the app is already running by doing:
 
 
-Next, you should be ready to launch the app (requires a functioning docker image - see above), navigate to the labear_api folder which contains the docker file.
+`flyctl status -a albinai` 
+
+If it is running, skip the `fly launch` bit
+
+If app is not running, you should be ready to launch the app (requires a functioning docker image - see above), navigate to the labear_api folder which contains the docker file.
 
 `fly launch`
 

@@ -226,7 +226,7 @@ class LabearApp(MDApp):
 
     def build(self):
         #screen = Builder.load_string(screen_helper)
-        self.icon = "app_images/icon3.png"
+        self.icon = "app_images/icon4.png"
         
         screen = Builder.load_file("AudioMon.kv") 
 
