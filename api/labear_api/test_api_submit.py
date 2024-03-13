@@ -1,12 +1,13 @@
 import requests
+import glob
 
-file = 'test_submit.wav'
+file = glob.glob('test_submit.wav')[0]
 
 url = 'https://albinai.fly.dev/monitor'
-#files = [('files', open('test_files/a.txt', 'rb')), ('files', open('test_files/b.txt', 'rb'))]
-files = [('files', open(file, 'rb'))]
+#url = 'http://127.0.0.1:8000/monitor'
 
-#payload ={"foo": "bar"}
-payload = {"user_id": "1234", "class_id": 11, "time_stamp": 12345, "is_accepted": False}
+files = [('files', open(file, 'rb'))]
+payload = {"user_id": "1234", "class_id": 'test_submit', "time_stamp": 12345, "is_accepted": False}
+
 resp = requests.post(url=url, data=payload, files=files) 
 print(resp.json())

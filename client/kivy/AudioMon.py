@@ -2,7 +2,9 @@ from dataclasses import dataclass, field
 from functools import partial
 from kivy.lang.builder import Builder
 from kivy.clock import Clock
+from kivy.uix.label import Label
 from kivy.uix.screenmanager import ScreenManager, Screen
+from kivy.uix.textinput import TextInput
 from kivy.properties import ObjectProperty
 from kivymd.app import MDApp
 import os
@@ -12,11 +14,12 @@ import requests
 from time import time
 
 #API 
-URL = "http://0.0.0.0:8000"
+URL = 'https://albinai.fly.dev'
 LEARN = '/learn'
 MONITOR = '/monitor'
 URL_LEARN = URL + LEARN
 URL_MON = URL + MONITOR
+TEST_ID = 99
 
 has_recording = False
 
@@ -27,7 +30,7 @@ def generate_timestamp() -> int:
 class Recording:
       audio_file: str
       user_id: str
-      class_id: int
+      class_id: str
       timestamp: int = field(init=False, default_factory=generate_timestamp)
       file_label: str = field(init=False)
 
@@ -49,10 +52,12 @@ class MenuScreen(Screen):
     pass
 
 
-def upload_file(recording, url):
+def upload_file(recording, url, **kwargs):
     file_labeled = recording.rename_rec()
     files = [('files', open(file_labeled, 'rb'))]
+    payload = {}
     payload = recording.get_rec_details()
+    payload.update(kwargs)
     resp = requests.post(url=url, files=files, data=payload)
     return resp.json()
 
@@ -67,6 +72,8 @@ class Rec(Screen):
     audio = ObjectProperty()
     def on_enter(self, *args):
         self.update_labels()
+        self.menu_screen = self.manager.get_screen("menu")
+
         return super().on_enter(*args)
 
     def record(self):
@@ -94,8 +101,8 @@ class Rec(Screen):
             
         if self.has_recording == True and state == 'ready':
             file_Sd = self.audio.file_path.split("file://")[1]
-            recording = Recording(audio_file=file_Sd, user_id='test_id', class_id=11)
-            resp = upload_file(recording, URL_LEARN)
+            recording = Recording(audio_file=file_Sd, user_id=self.menu_screen.ids["text_user"].text, class_id=self.ids['text_app'].text)
+            resp = upload_file(recording, URL_LEARN, app_name=self.ids['text_app'].text, test='test')
             print(resp)
             self.upload_state = 'upload_complete'
             self.has_recording = False
@@ -107,6 +114,7 @@ class Rec(Screen):
         upload_button = self.ids['upload_button']
         state_label = self.ids['state']
         upload_state = self.ids['upload_state_label']
+        text_app = self.ids['text_app']
 
         state = self.audio.state
         play_button.disabled  = not self.has_recording
@@ -118,17 +126,20 @@ class Rec(Screen):
             record_button.text = 'START RECORD'
             play_button.text = 'PLAY AUDIO'
             record_button.disabled = False
+            text_app.disabled = False
         
         if state == 'recording':
             record_button.text = 'STOP RECORD'
             upload_button.disabled = True
             play_button.disabled = True
+            text_app.disabled = True
             upload_state.text = 'Audio Not Uploaded'           
 
         if state == 'playing':
             play_button.text = 'STOP AUDIO'
             record_button.disabled = True
             upload_button.disabled = True
+            text_app.disabled = True
         
         if self.upload_state == 'upload_complete':
             upload_button.disabled = True

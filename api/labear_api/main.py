@@ -73,7 +73,7 @@ def received_file(files):
 @app.post(LEARN)
 async def submit(
     user_id: str = Form(...),
-    class_id: int = Form(...),
+    class_id: str = Form(...),
     time_stamp: int = Form(...),
     files: List[UploadFile] = File(...),
 ):
@@ -91,7 +91,7 @@ async def submit(
 @app.post(MONITOR)
 async def monitor(
     user_id: str = Form(...),
-    class_id: int = Form(...),
+    class_id: str = Form(...),
     time_stamp: int = Form(...),
     files: List[UploadFile] = File(...),
 ):
