@@ -2,9 +2,12 @@ import sys
 import logging
 from watchdog.observers import Observer
 from watchdog.events import LoggingEventHandler
-from eartools.eartools import MON_FILES, RAW_FILES
 
 TEST = '/Users/jonas/test/'
+
+#SERVER LOCATIONS
+RAW_FILES = '../../data/raw_appliances/'
+MON_FILES = '../../data/mon_appliances/'
 
 class MonitorEventHandler(LoggingEventHandler):
     """Logs all the events captured."""

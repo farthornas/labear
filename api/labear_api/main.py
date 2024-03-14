@@ -1,6 +1,7 @@
 from typing import List
 
 from fastapi import FastAPI, File, UploadFile, Form
+from fastapi.responses import RedirectResponse
 import uvicorn
 import os
 import aiofiles
@@ -8,11 +9,6 @@ from dataclasses import dataclass
 from influxdb_client_3 import InfluxDBClient3, Point
 from influxdb_client.client.write_api import SYNCHRONOUS, ASYNCHRONOUS
 
-
-
-#SERVER LOCATIONS
-RAW_FILES = '../../data/raw_appliances/'
-MON_FILES = '../../data/mon_appliances/'
 
 #API 
 URL = "http://127.0.0.1:8000"
@@ -107,8 +103,9 @@ async def monitor(
     return submitted
 
 @app.get("/")
-async def root():
-    return {"message": "Hello World"}
+async def docs_redirect():
+    return RedirectResponse(url='/docs')
+
 
 def start():
     """Launched with `poetry run start` at root level"""
