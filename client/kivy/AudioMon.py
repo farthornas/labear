@@ -12,6 +12,8 @@ from os import rename
 import pandas as pd
 import requests
 from time import time
+import audiosegment
+import tempfile
 
 #API 
 URL = 'https://albinai.fly.dev'
@@ -28,40 +30,56 @@ def generate_timestamp() -> int:
 
 @dataclass
 class Recording:
-      audio_file: str
-      user_id: str
-      class_id: str
-      timestamp: int = field(init=False, default_factory=generate_timestamp)
-      file_label: str = field(init=False)
+    audio_file: object
+    user_id: str
+    class_id: str
+    timestamp: int = field(init=False, default_factory=generate_timestamp)
+    file_label: str = field(init=False)
+    file_path: str = field(init=False)
 
-      def __post_init__(self) -> None:
-            self.file_label = f"{self.user_id}_{self.class_id}_{self.timestamp}.wav"
-      
-      def rename_rec(self, new_name=None):
-            if new_name:
-                 self.file_label = new_name
-            rename(str(self.audio_file), str(self.file_label))
-            return self.file_label
-      
-      def get_rec_details(self):
-          return {"user_id": self.user_id, "class_id": self.class_id, "time_stamp": self.timestamp}
+    def __post_init__(self) -> None:
+        self.file_label = f"{self.user_id}_{self.class_id}_{self.timestamp}"
+        self.file_path = self.audio_file.file_path.split("file://")[1]
 
+    def rename_rec(self, new_name=None):
+        if new_name:
+             self.file_label = new_name
+        print(self.audio_file.file_path)
+        rename(str(self.file_path), str(f'{self.file_path}/{self.file_label}.wav'))
+        return self.file_label
+    
+    def get_rec_details(self):
+        return {"user_id": self.user_id, "class_id": self.class_id, "time_stamp": self.timestamp}
+
+    def get_file_path(self):
+        return self.file_path
+    
+    def get_file_label(self):
+        return self.file_label
+    
+    def clean_up(self):
+        os.remove(self.file_path)
+
+
+def upload_file(recording, url, **kwargs):
+    wavs = audiosegment.from_file(recording.get_file_path()).dice(3)
+    files = []
+    payload = {}
+    payload = recording.get_rec_details()
+    payload.update(kwargs)
+    with tempfile.TemporaryDirectory() as tempdirname:
+        for k, wav in enumerate(wavs):
+            file_name = f'{recording.get_file_label()}_{k}.wav'
+            file = f'{tempdirname}/{file_name}'
+            wav.export(file, format='wav')
+            files.append(('files', open(file, 'rb')))
+        resp = requests.post(url=url, files=files, data=payload)
+        recording.clean_up()
+    return resp.json()
 
 
 class MenuScreen(Screen):
     pass
-
-
-def upload_file(recording, url, **kwargs):
-    file_labeled = recording.rename_rec()
-    files = [('files', open(file_labeled, 'rb'))]
-    payload = {}
-    payload = recording.get_rec_details()
-    payload.update(kwargs)
-    resp = requests.post(url=url, files=files, data=payload)
-    return resp.json()
-
-
 
 class Rec(Screen):
     def __init__(self, **kwargs):
@@ -100,8 +118,8 @@ class Rec(Screen):
         state = self.audio.state
             
         if self.has_recording == True and state == 'ready':
-            file_Sd = self.audio.file_path.split("file://")[1]
-            recording = Recording(audio_file=file_Sd, user_id=self.menu_screen.ids["text_user"].text, class_id=self.ids['text_app'].text)
+            #file_Sd = self.audio.file_path.split("file://")[1]
+            recording = Recording(audio_file=self.audio, user_id=self.menu_screen.ids["text_user"].text, class_id=self.ids['text_app'].text)
             resp = upload_file(recording, URL_LEARN, app_name=self.ids['text_app'].text, test='test')
             print(resp)
             self.upload_state = 'upload_complete'
