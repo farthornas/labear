@@ -88,11 +88,6 @@ class Rec(Screen):
         self.monitor_state = 'Monitor not running'
     
     audio = ObjectProperty()
-    def on_enter(self, *args):
-        self.update_labels()
-        self.menu_screen = self.manager.get_screen("menu")
-
-        return super().on_enter(*args)
 
     def record(self):
         state = self.audio.state
@@ -171,9 +166,16 @@ class Monitor(Screen):
         super(Monitor, self).__init__(**kwargs)
     #has_recording = False
         self.monitoring = False
+        self.monitor_state = 'Not monitoring'
+
+    
+    def on_enter(self, *args):
+        self.update_labels()
+        self.menu_screen = self.manager.get_screen("menu")
+
+        return super().on_enter(*args)
 
     #upload_state = 'Audio Not Uploaded'
-        self.monitor_state = 'Not monitoring'
     
     #audio = ObjectProperty()
     #def on_enter(self, *args):
@@ -183,8 +185,7 @@ class Monitor(Screen):
     def callback_upload(self, *largs):
         #if self.has_recording == True and state == 'ready':
         self.audio.stop()
-        file_Sd = self.audio.file_path.split("file://")[1]
-        recording = Recording(audio_file=file_Sd, user_id='test_id', class_id=11)
+        recording = Recording(audio_file=self.audio, user_id=self.menu_screen.ids["text_user"].text, class_id='test_mon')
         resp = upload_file(recording, URL_MON)
         print(resp)
 
