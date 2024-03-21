@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from influxdb_client_3 import InfluxDBClient3, Point
 from influxdb_client.client.write_api import SYNCHRONOUS, ASYNCHRONOUS
 import labear_api.ear as ear
+from loguru import logger
 
 # API
 URL = "http://127.0.0.1:8000"
@@ -56,12 +57,10 @@ async def file_handler(files, path):
     return result
 
 
-def received_file(files):
-    print("Files received")
+def log_fileinfo(files: list[UploadFile]):
+    logger.info("Files received:")
     for file in files:
-        print(f"File name:{file.filename}")
-        print(f"File size:{file.size}")
-
+        logger.info(f"{file.filename} ({file.size/1000:0.2f} KB)")
 
 @app.post(LEARN)
 async def submit(
@@ -71,7 +70,7 @@ async def submit(
     files: List[UploadFile] = File(...),
 ):
 
-    received_file(files)
+    log_fileinfo(files)
 
     submitted = {
         "Payload": {
@@ -94,23 +93,31 @@ async def monitor(
     time_stamp: int = Form(...),
     files: List[UploadFile] = File(...),
 ):
-    received_file(files)
+    log_fileinfo(files)
 
     response = {
-        "payload": {
+        "request": {
             "user_id": user_id,
             "class_id": class_id,
             "time_stamp": time_stamp,
-            "files_sizes": [file.size for file in files],
-            "file_names": [file.filename for file in files],
+            "files": [
+                {"size": file.size, "name": file.filename} for file in files
+            ]
         }
     }
     metr = {"user_id": user_id, "class_id": class_id, "time_stamp": time_stamp, "files": len(files)}
     metrics.post(metr, MONITOR)
 
     # just do single (first) file for now
+    # TODO handle multiple files
     file = files[0].file
-    response["prediction"] = ear.predict(file)
+    probs, score, index, prediction  = ear.predict(file)
+    probabilities = ear.make_probabilities(probs.reshape(-1))
+    response["data"] = {
+        "probabilities": probabilities,
+        "prediction": prediction,
+        "score": score.item()
+    }
     return response
 
 # Redirect root url to docs
