@@ -27,14 +27,10 @@ def predict(in_file: BinaryIO):
     batch = waveform.unsqueeze(0)
     rel_length = torch.tensor([1.0])
     emb = classifier.encode_batch(batch, rel_length)
-    out_probs = classifier.mods.classifier(emb).squeeze(1)
-    score, index = torch.max(out_probs, dim=-1)
-    classname = classifier.hparams.label_encoder.decode_torch(index)
-    return out_probs, score, index, classname
-
-def make_probabilities(probs):
-    """
-    Builds a dictionaru like {classname: probability} from a tensor of probabilities, given the label 
-    encoder of the classifier
-    """
-    return {classifier.hparams.label_encoder.__dict__['ind2lab'][i]: prob for i, prob in enumerate(probs.tolist())}
+    probs = classifier.mods.classifier(emb).squeeze()
+    score, index = torch.max(probs, dim=-1)
+    prediction = classifier.hparams.label_encoder.decode_torch(torch.tensor([index]))
+    # Build a dictionary like {classname: probability} from tensor of probabilities
+    # using the classifier's index to label dict 
+    probabilities = {classifier.hparams.label_encoder.ind2lab[i]: prob for i, prob in enumerate(probs.tolist())}
+    return probabilities, prediction, score

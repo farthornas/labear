@@ -96,7 +96,7 @@ async def monitor(
     log_fileinfo(files)
 
     response = {
-        "request": {
+        "request_info": {
             "user_id": user_id,
             "class_id": class_id,
             "time_stamp": time_stamp,
@@ -111,9 +111,8 @@ async def monitor(
     # just do single (first) file for now
     # TODO handle multiple files
     file = files[0].file
-    probs, score, index, prediction  = ear.predict(file)
-    probabilities = ear.make_probabilities(probs.reshape(-1))
-    response["data"] = {
+    probabilities, prediction, score  = ear.predict(file)
+    response["prediction"] = {
         "probabilities": probabilities,
         "prediction": prediction,
         "score": score.item()
