@@ -7,12 +7,17 @@ import aiofiles
 from dataclasses import dataclass
 from influxdb_client_3 import InfluxDBClient3, Point
 from influxdb_client.client.write_api import SYNCHRONOUS, ASYNCHRONOUS
+from labear_api.cloud_upload import upload_many_blobs_with_transfer_manager as many_blobs
+from labear_api.cloud_upload import upload_blob_from_stream
+from labear_api.cloud_upload import upload_many_blobs_from_stream_with_transfer_manager as upload_many_blobs_from_stream
+#import tempfile
 
 
 
-#SERVER LOCATIONS
-RAW_FILES = '../../data/raw_appliances/'
-MON_FILES = '../../data/mon_appliances/'
+# Cloud data
+BUCKET = "data_labear"
+PROJECT = "labear"
+
 
 #API 
 URL = "http://127.0.0.1:8000"
@@ -85,6 +90,8 @@ async def submit(
         "Filenames": [file.filename for file in files],}
     }
     metr = {"user_id": user_id, "class_id": class_id, "time_stamp": time_stamp, "files": len(files)}
+    upload_many_blobs_from_stream(bucket_name=BUCKET, files=files)
+    
     metrics.post(metr, LEARN)
     return submitted
 

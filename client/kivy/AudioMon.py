@@ -16,7 +16,8 @@ import audiosegment
 import tempfile
 
 #API 
-URL = 'https://albinai.fly.dev'
+#URL = 'https://albinai.fly.dev'
+URL = 'http://0.0.0.0:8000'
 LEARN = '/learn'
 MONITOR = '/monitor'
 URL_LEARN = URL + LEARN
@@ -86,6 +87,12 @@ class Rec(Screen):
         super(Rec, self).__init__(**kwargs)
         self.has_recording = False
         self.monitor_state = 'Monitor not running'
+    
+    def on_enter(self, *args):
+        self.update_labels()
+        self.menu_screen = self.manager.get_screen("menu")
+        return super().on_enter(*args)
+
     
     audio = ObjectProperty()
 
@@ -256,7 +263,8 @@ class LabearApp(MDApp):
 
     def build(self):
         #screen = Builder.load_string(screen_helper)
-        self.icon = "app_images/icon4.png"
+        self.icon = "app_images/icon7.png"
+        self.icon_size = 0.2
         
         screen = Builder.load_file("AudioMon.kv") 
 
