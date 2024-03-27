@@ -9,7 +9,6 @@ from kivy.properties import ObjectProperty
 from kivymd.app import MDApp
 import os
 from os import rename
-import pandas as pd
 import requests
 from time import time
 import audiosegment

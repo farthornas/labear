@@ -7,8 +7,6 @@ import aiofiles
 from dataclasses import dataclass
 from influxdb_client_3 import InfluxDBClient3, Point
 from influxdb_client.client.write_api import SYNCHRONOUS, ASYNCHRONOUS
-from labear_api.cloud_upload import upload_many_blobs_with_transfer_manager as many_blobs
-from labear_api.cloud_upload import upload_blob_from_stream
 from labear_api.cloud_upload import upload_many_blobs_from_stream_with_transfer_manager as upload_many_blobs_from_stream
 #import tempfile
 
