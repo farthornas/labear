@@ -1,6 +1,11 @@
 from google.cloud import storage
 from google.cloud.storage import transfer_manager
+from google.oauth2 import service_account
+import os
+import json
+from json.decoder import JSONDecodeError
 
+PROJECT = 'labear'
 
 def upload_many_from_files(
     bucket,
@@ -190,162 +195,6 @@ def upload_many_from_files(
         max_workers=max_workers,
     )
 
-def upload_many_blobs_with_transfer_manager(
-    bucket_name, filenames, source_directory="", workers=8
-):
-    """Upload every file in a list to a bucket, concurrently in a process pool.
-
-    Each blob name is derived from the filename, not including the
-    `source_directory` parameter. For complete control of the blob name for each
-    file (and other aspects of individual blob metadata), use
-    transfer_manager.upload_many() instead.
-    """
-
-    # The ID of your GCS bucket
-    # bucket_name = "your-bucket-name"
-
-    # A list (or other iterable) of filenames to upload.
-    # filenames = ["file_1.txt", "file_2.txt"]
-
-    # The directory on your computer that is the root of all of the files in the
-    # list of filenames. This string is prepended (with os.path.join()) to each
-    # filename to get the full path to the file. Relative paths and absolute
-    # paths are both accepted. This string is not included in the name of the
-    # uploaded blob; it is only used to find the source files. An empty string
-    # means "the current working directory". Note that this parameter allows
-    # directory traversal (e.g. "/", "../") and is not intended for unsanitized
-    # end user input.
-    # source_directory=""
-
-    # The maximum number of processes to use for the operation. The performance
-    # impact of this value depends on the use case, but smaller files usually
-    # benefit from a higher number of processes. Each additional process occupies
-    # some CPU and memory resources until finished. Threads can be used instead
-    # of processes by passing `worker_type=transfer_manager.THREAD`.
-    # workers=8
-
-    storage_client = storage.Client(project="labear")
-    bucket = storage_client.bucket(bucket_name)
-
-    results = storage.transfer_manager.upload_many(
-        bucket, filenames, source_directory=source_directory, max_workers=workers
-    )
-
-    for name, result in zip(filenames, results):
-        # The results list is either `None` or an exception for each filename in
-        # the input list, in order.
-
-        if isinstance(result, Exception):
-            print("Failed to upload {} due to exception: {}".format(name, result))
-        else:
-            print("Uploaded {} to {}.".format(name, bucket.name))
-
-def upload_blob_from_stream(bucket_name, file_obj, destination_blob_name, project_name=""):
-    """Uploads bytes from a stream or other file-like object to a blob."""
-    # The ID of your GCS bucket
-    # bucket_name = "your-bucket-name"
-
-    # The stream or file (file-like object) from which to read
-    # import io
-    # file_obj = io.BytesIO()
-    # file_obj.write(b"This is test data.")
-
-    # The desired name of the uploaded GCS object (blob)
-    # destination_blob_name = "storage-object-name"
-
-    # Construct a client-side representation of the blob.
-    storage_client = storage.Client(project=project_name)
-    bucket = storage_client.bucket(bucket_name)
-    blob = bucket.blob(destination_blob_name)
-
-    # Rewind the stream to the beginning. This step can be omitted if the input
-    # stream will always be at a correct position.
-    file_obj.seek(0)
-
-    # Upload data from the stream to your bucket.
-    blob.upload_from_file(file_obj)
-
-    print(
-        f"Stream data uploaded to {destination_blob_name} in bucket {bucket_name}."
-    )
-
-def upload_blob(bucket_name, source_file_name, destination_blob_name):
-    """Uploads a file to the bucket."""
-    # The ID of your GCS bucket
-    # bucket_name = "your-bucket-name"
-    # The path to your file to upload
-    # source_file_name = "local/path/to/file"
-    # The ID of your GCS object
-    # destination_blob_name = "storage-object-name"
-
-    storage_client = storage.Client(project="labear")
-    bucket = storage_client.bucket(bucket_name)
-    blob = bucket.blob(destination_blob_name)
-
-    # Optional: set a generation-match precondition to avoid potential race conditions
-    # and data corruptions. The request to upload is aborted if the object's
-    # generation number does not match your precondition. For a destination
-    # object that does not yet exist, set the if_generation_match precondition to 0.
-    # If the destination object already exists in your bucket, set instead a
-    # generation-match precondition using its generation number.
-    generation_match_precondition = 0
-
-    blob.upload_from_filename(source_file_name, if_generation_match=generation_match_precondition)
-
-    print(
-        f"File {source_file_name} uploaded to {destination_blob_name}."
-    )
-
-def upload_many_blobs_with_transfer_manager(
-    bucket_name, filenames, source_directory="", workers=8
-):
-    """Upload every file in a list to a bucket, concurrently in a process pool.
-
-    Each blob name is derived from the filename, not including the
-    `source_directory` parameter. For complete control of the blob name for each
-    file (and other aspects of individual blob metadata), use
-    transfer_manager.upload_many() instead.
-    """
-
-    # The ID of your GCS bucket
-    # bucket_name = "your-bucket-name"
-
-    # A list (or other iterable) of filenames to upload.
-    # filenames = ["file_1.txt", "file_2.txt"]
-
-    # The directory on your computer that is the root of all of the files in the
-    # list of filenames. This string is prepended (with os.path.join()) to each
-    # filename to get the full path to the file. Relative paths and absolute
-    # paths are both accepted. This string is not included in the name of the
-    # uploaded blob; it is only used to find the source files. An empty string
-    # means "the current working directory". Note that this parameter allows
-    # directory traversal (e.g. "/", "../") and is not intended for unsanitized
-    # end user input.
-    # source_directory=""
-
-    # The maximum number of processes to use for the operation. The performance
-    # impact of this value depends on the use case, but smaller files usually
-    # benefit from a higher number of processes. Each additional process occupies
-    # some CPU and memory resources until finished. Threads can be used instead
-    # of processes by passing `worker_type=transfer_manager.THREAD`.
-    # workers=8
-
-    storage_client = storage.Client(project="labear")
-    bucket = storage_client.bucket(bucket_name)
-
-    results = storage.transfer_manager.upload_many_from_filenames(
-        bucket, filenames, source_directory=source_directory, max_workers=workers
-    )
-
-    for name, result in zip(filenames, results):
-        # The results list is either `None` or an exception for each filename in
-        # the input list, in order.
-
-        if isinstance(result, Exception):
-            print("Failed to upload {} due to exception: {}".format(name, result))
-        else:
-            print("Uploaded {} to {}.".format(name, bucket.name))
-
 
 def upload_many_blobs_from_stream_with_transfer_manager(
     bucket_name, files, workers=8
@@ -370,7 +219,22 @@ def upload_many_blobs_from_stream_with_transfer_manager(
     # of processes by passing `worker_type=transfer_manager.THREAD`.
     # workers=8
 
-    storage_client = storage.Client(project="labear")
+    # GOOGLE_APPLICATION_CREDENTIALS is added to secrets in fly.io which are loaded
+    # as environment variables in the fly-machine at runtime. The environment variable 
+    # needs convertion to json format as its saved as string in fly.io secret.
+    # This method of loading environment variables does apply outside 
+    # fly.io hence the try/except.
+    try:
+        gc_env = os.environ['GOOGLE_APPLICATION_CREDENTIALS']
+        creds = json.loads(gc_env)
+        credentials = service_account.Credentials.from_service_account_info(
+        creds)
+    except (KeyError, ValueError):
+        print('Loading credentials (Google service account) from JSON failed - will try default method from environment')
+        storage_client = storage.Client(project=PROJECT)
+    else:
+        storage_client = storage.Client(project=PROJECT, credentials=credentials)
+    
     bucket = storage_client.bucket(bucket_name)
 
     results = upload_many_from_files(

@@ -15,8 +15,8 @@ import audiosegment
 import tempfile
 
 #API 
-#URL = 'https://albinai.fly.dev'
-URL = 'http://0.0.0.0:8000'
+URL = 'https://albinai.fly.dev'
+# URL = 'http://0.0.0.0:8000'
 LEARN = '/learn'
 MONITOR = '/monitor'
 URL_LEARN = URL + LEARN
@@ -75,7 +75,12 @@ def upload_file(recording, url, **kwargs):
             files.append(('files', open(file, 'rb')))
         resp = requests.post(url=url, files=files, data=payload)
         recording.clean_up()
-    return resp.json()
+    try:
+        response = resp.json()
+    except ValueError as err:
+        print(f"Response from API missing: {err}")
+        return err
+    return response
 
 
 class MenuScreen(Screen):

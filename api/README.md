@@ -33,7 +33,13 @@ This should build the docker image.
 
 Next run the image by running:
 
-`docker run -p 8000:8000 api-app`   
+`docker run -p 8000:8000 api-app`
+
+Alternatively if you want to test the build with google cloud access  (this is required if @app.post(LEARN) is used) you will need to aquire a service account key. Once the account key is obtained, download and place in the appropriate folder (`/app/.config/gcloud/application_default_credentials.json` in this example). Then run: 
+
+`docker run -e GOOGLE_APPLICATION_CREDENTIALS="/app/.config/gcloud/application_default_credentials.json" --mount type=bind,source=${HOME}/.config/gcloud,target=/app/.config/gcloud -p 8000:8000 api-app`
+
+
 
 Check that the api responds by next running `python /labear_api/test_api_submit.py`
 
@@ -65,7 +71,11 @@ If app is not running, you should be ready to launch the app (requires a functio
 
 The  `fly.toml` file this will be used for the launch configuration. 
 
-Once launched the app shoul be running at: https://albinai.fly.dev. Upon opedning the webpage you should see the
+If updates to the image is needed (say from updating the code base) run:
+
+`fly deploy`
+
+Once launched the app should be running at: https://albinai.fly.dev. Upon opedning the webpage you should see the
 following `{"message":"Hello World"}`
 
 To test to check if the service is running as it should navigate to labear_api and run:
@@ -88,3 +98,20 @@ This will send a .wav to the api running at https://albinai.fly.dev and you shou
 
 For more details on launching a docker image check out: https://fly.io/docs/languages-and-frameworks/dockerfile/
 
+### Google Cloud 
+
+Google cloud should/is now used to store training data.
+The data is kept in a bucket on cloud storage:  
+
+`data_labear`
+
+To access the bucket the fly.io instance will need to have the appropiate premissions. 
+This can be obtained with a service account key for the project on google cloud services. Once the account key is obtained, it can be downloaded and placed in the appropriate folder eg. `/app/.config/gcloud/application_default_credentials.json` 
+
+The service account key will then need to be added to  fly.io secrets. This can be done by doing:
+
+`flyctl secrets set GOOGLE_APPLICATION_CREDENTIALS=- < application_default_credentials.json`
+
+To check it has been added appropriatly run:
+
+`flyctl secrets list -a albinai`

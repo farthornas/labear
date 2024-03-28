@@ -88,6 +88,7 @@ async def submit(
         "Filenames": [file.filename for file in files],}
     }
     metr = {"user_id": user_id, "class_id": class_id, "time_stamp": time_stamp, "files": len(files)}
+    print(f"Attempt gc upload....")
     upload_many_blobs_from_stream(bucket_name=BUCKET, files=files)
     
     metrics.post(metr, LEARN)
