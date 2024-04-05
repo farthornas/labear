@@ -75,8 +75,8 @@ If updates to the image is needed (say from updating the code base) run:
 
 `fly deploy`
 
-Once launched the app should be running at: https://albinai.fly.dev. Upon opedning the webpage you should see the
-following `{"message":"Hello World"}`
+Once launched the app should be running at: https://albinai.fly.dev. Upon opening the webpage you should be 
+redirected to the docs openapi docs page.  
 
 To test to check if the service is running as it should navigate to labear_api and run:
 
