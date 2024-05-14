@@ -30,7 +30,7 @@ URL_LEARN = URL + LEARN
 URL_MON = URL + MONITOR
 
 # DASHBOARD
-TOKEN = "lxB5VtvRuEDCh2Q3ATSK6msJKaGpQ5kHuJomgGMFtpt8iM0gYDm--VO9ZlwOj47oxV11rttLN4KIE7JTrb2ELQ=="
+TOKEN = os.environ['INFLUX_DB']
 DEV = "Dev team"
 HOST = "https://us-east-1-1.aws.cloud2.influxdata.com"
 DATA_BASE = "metrics"

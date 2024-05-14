@@ -19,6 +19,15 @@ Do `brew install docker`
 
 Do `brew install docker-buildx`
 
+For Docker to find the buildx component which is required to use Docker buildkit the following lines 
+should be added to your Docker config.json file (mine was at ~/.docker/config.json)
+
+  "cliPluginsExtraDirs": [
+      "/opt/homebrew/lib/docker/cli-plugins"
+  ]
+
+
+
 Now install colima:
 
 Do `brew install colima`
@@ -27,7 +36,7 @@ Once installed verify its working by running `docker info` build -t api-app .
 
 Next navigate to the api folder and run:
 
-`docker build -t api-app .`
+`DOCKER_BUILDKIT=1 docker build -t api_app .`
 
 This should build the docker image. 
 
@@ -115,3 +124,29 @@ The service account key will then need to be added to  fly.io secrets. This can 
 To check it has been added appropriatly run:
 
 `flyctl secrets list -a albinai`
+
+GOOGLE_APPLICATION_CREDENTIALS is added to secrets in fly.io which are loaded
+as environment variables in the fly-machine at runtime. The environment variable 
+needs convertion to json format as its saved as string in fly.io secret.
+This method of loading environment variables does apply outside 
+fly.io hence the try/except.
+
+The files to be uploaded are kept as file-like-objects and uploaded to
+the ID of the chosen GCS bucket:
+
+bucket_name = "your-bucket-name"
+
+the files should be in a list (or other iterable) of files to upload:
+
+filenames = ["file_1.txt", "file_2.txt"]
+
+Uploading the files can be done by using `process` or `threads` - we use 
+threads as the files are generally small in which case threads are more efficient.
+
+We also set the number of processes/threads to use in the upload. 
+
+The performance impact of this value depends on the use case, but smaller files usually
+benefit from a higher number of threads.
+
+
+

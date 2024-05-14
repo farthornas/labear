@@ -7,19 +7,16 @@ from json.decoder import JSONDecodeError
 
 PROJECT = 'labear'
 
+TRANSFER_MANAGER_DEADLINE = None
+TRANSFER_MANAGER_SKIP_IF_EXISTS = False
+TRANSFER_MANAGER_RAISE_EXEPTION = False
+
 def upload_many_from_files(
     bucket,
     files,
     source_directory="",
     blob_name_prefix="",
-    skip_if_exists=False,
     blob_constructor_kwargs=None,
-    upload_kwargs=None,
-    threads=None,
-    deadline=None,
-    raise_exception=False,
-    worker_type="thread",
-    max_workers=8,
     *,
     additional_blob_attributes=None,
 ):
@@ -73,14 +70,6 @@ def upload_many_from_files(
 
         The blob_name_prefix can be blank (an empty string).
 
-    :type skip_if_exists: bool
-    :param skip_if_exists:
-        If True, blobs that already have a live version will not be overwritten.
-        This is accomplished by setting `if_generation_match = 0` on uploads.
-        Uploads so skipped will result in a 412 Precondition Failed response
-        code, which will be included in the return value, but not raised
-        as an exception regardless of the value of raise_exception.
-
     :type blob_constructor_kwargs: dict
     :param blob_constructor_kwargs:
         A dictionary of keyword arguments to pass to the blob constructor. Refer
@@ -88,69 +77,6 @@ def upload_many_from_files(
         directly passed into the constructor and is not validated by this
         function. `name` and `bucket` keyword arguments are reserved by this
         function and will result in an error if passed in here.
-
-    :type upload_kwargs: dict
-    :param upload_kwargs:
-        A dictionary of keyword arguments to pass to the upload method. Refer
-        to the documentation for `blob.upload_from_file()` or
-        `blob.upload_from_filename()` for more information. The dict is directly
-        passed into the upload methods and is not validated by this function.
-
-    :type threads: int
-    :param threads:
-        ***DEPRECATED*** Sets `worker_type` to THREAD and `max_workers` to the
-        number specified. If `worker_type` or `max_workers` are set explicitly,
-        this parameter should be set to None. Please use `worker_type` and
-        `max_workers` instead of this parameter.
-
-    :type deadline: int
-    :param deadline:
-        The number of seconds to wait for all threads to resolve. If the
-        deadline is reached, all threads will be terminated regardless of their
-        progress and `concurrent.futures.TimeoutError` will be raised. This can
-        be left as the default of `None` (no deadline) for most use cases.
-
-    :type raise_exception: bool
-    :param raise_exception:
-        If True, instead of adding exceptions to the list of return values,
-        instead they will be raised. Note that encountering an exception on one
-        operation will not prevent other operations from starting. Exceptions
-        are only processed and potentially raised after all operations are
-        complete in success or failure.
-
-        If skip_if_exists is True, 412 Precondition Failed responses are
-        considered part of normal operation and are not raised as an exception.
-
-    :type worker_type: str
-    :param worker_type:
-        The worker type to use; one of `google.cloud.storage.transfer_manager.PROCESS`
-        or `google.cloud.storage.transfer_manager.THREAD`.
-
-        Although the exact performance impact depends on the use case, in most
-        situations the PROCESS worker type will use more system resources (both
-        memory and CPU) and result in faster operations than THREAD workers.
-
-        Because the subprocesses of the PROCESS worker type can't access memory
-        from the main process, Client objects have to be serialized and then
-        recreated in each subprocess. The serialization of the Client object
-        for use in subprocesses is an approximation and may not capture every
-        detail of the Client object, especially if the Client was modified after
-        its initial creation or if `Client._http` was modified in any way.
-
-        THREAD worker types are observed to be relatively efficient for
-        operations with many small files, but not for operations with large
-        files. PROCESS workers are recommended for large file operations.
-
-    :type max_workers: int
-    :param max_workers:
-        The maximum number of workers to create to handle the workload.
-
-        With PROCESS workers, a larger number of workers will consume more
-        system resources (memory and CPU) at once.
-
-        How many workers is optimal depends heavily on the specific use case,
-        and the default is a conservative number that should work okay in most
-        cases without consuming excessive resources.
 
     :type additional_blob_attributes: dict
     :param additional_blob_attributes:
@@ -163,14 +89,13 @@ def upload_many_from_files(
         blob identically. To fine-tune each blob individually, use `upload_many`
         and create the blobs as desired before passing them in.
 
-    :raises: :exc:`concurrent.futures.TimeoutError` if deadline is exceeded.
-
     :rtype: list
     :returns: A list of results corresponding to, in order, each item in the
         input list. If an exception was received, it will be the result
         for that operation. Otherwise, the return value from the successful
         upload method is used (which will be None).
     """
+
     if blob_constructor_kwargs is None:
         blob_constructor_kwargs = {}
     if additional_blob_attributes is None:
@@ -187,12 +112,12 @@ def upload_many_from_files(
     
     return transfer_manager.upload_many(
         file_blob_pairs,
-        skip_if_exists=skip_if_exists,
-        upload_kwargs=upload_kwargs,
-        deadline=deadline,
-        raise_exception=raise_exception,
-        worker_type=worker_type,
-        max_workers=max_workers,
+        skip_if_exists=TRANSFER_MANAGER_SKIP_IF_EXISTS,
+        upload_kwargs=None,
+        deadline=TRANSFER_MANAGER_DEADLINE,
+        raise_exception=TRANSFER_MANAGER_RAISE_EXEPTION,
+        worker_type=transfer_manager.THREAD, # "thread" for smallish files, "process" for large files
+        max_workers=transfer_manager.DEFAULT_MAX_WORKERS,
     )
 
 
@@ -205,19 +130,6 @@ def upload_many_blobs_from_stream_with_transfer_manager(
     file (and other aspects of individual blob metadata), use
     transfer_manager.upload_many() instead.
     """
-
-    # The ID of your GCS bucket
-    # bucket_name = "your-bucket-name"
-
-    # A list (or other iterable) of files to upload.
-    # filenames = ["file_1.txt", "file_2.txt"]
-
-    # The maximum number of processes to use for the operation. The performance
-    # impact of this value depends on the use case, but smaller files usually
-    # benefit from a higher number of processes. Each additional process occupies
-    # some CPU and memory resources until finished. Threads can be used instead
-    # of processes by passing `worker_type=transfer_manager.THREAD`.
-    # workers=8
 
     # GOOGLE_APPLICATION_CREDENTIALS is added to secrets in fly.io which are loaded
     # as environment variables in the fly-machine at runtime. The environment variable 
@@ -238,16 +150,16 @@ def upload_many_blobs_from_stream_with_transfer_manager(
     bucket = storage_client.bucket(bucket_name)
 
     results = upload_many_from_files(
-        bucket, files, max_workers=workers
+        bucket, files
     )
 
     for file, result in zip(files, results):
     #    # The results list is either `None` or an exception for each filename in
     #    # the input list, in order.
         if isinstance(result, Exception):
-            print("Failed to upload {} due to exception: {}".format(file.filename, result))
+            print(f"Failed to upload {file.name} due to exception: {result}")
         else:
-            print("Uploaded {} to {}.".format(file.filename, bucket.name))
+            print(f"Uploaded {file.filename} to {bucket.name}.")
 
 def main():
 
