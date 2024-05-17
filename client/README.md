@@ -16,4 +16,18 @@ Once the API is running:
 
 Do `poetry run python kivy/AudioMon.py` to start up the application
 
+## Running the App on Android
+
+To build a package for Android a automated builder called Buildozer is used. First 
+install Buildozer by following the instructions here: 
+
+`https://buildozer.readthedocs.io/en/latest/installation.html`
+
+Where a step in the install or requirements requires [pip], use [poetry] instead.
+
+Getting the installation to work required some efforts (java in particular gave me some grief).
+
+
+
+
 

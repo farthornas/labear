@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
 from functools import partial
+from jnius import autoclass
 from kivy.lang.builder import Builder
 from kivy.clock import Clock
 from kivy.uix.label import Label
@@ -8,15 +9,13 @@ from kivy.uix.textinput import TextInput
 from kivy.properties import ObjectProperty
 from kivymd.app import MDApp
 from kivy.utils import platform
-from jnius import autoclass
 import os
 from os import rename
+from pydub import AudioSegment
+
 import requests
 from time import time
-#import audiosegment
 import tempfile
-from android.permissions import request_permissions, Permission
-from android.storage import primary_external_storage_path
 Logger = autoclass('java.util.logging.Logger')
 mylogger = Logger.getLogger('[AlbinEars]')
 
@@ -73,7 +72,7 @@ class Recording:
 
 
 def upload_file(recording, url, **kwargs):
-    #wavs = audiosegment.from_file(recording.get_file_path()).dice(3)
+    wavs = AudioSegment.from_file(recording.get_file_path()).dice(3)
 
     files = []
     
@@ -83,14 +82,14 @@ def upload_file(recording, url, **kwargs):
     payload.update(kwargs)
     files.append(('files', open(new_name, 'rb')))
     resp = requests.post(url=url, files=files, data=payload)
-    #with tempfile.TemporaryDirectory() as tempdirname:
-    #    for k, wav in enumerate(wavs):
-    #        file_name = f'{recording.get_file_label()}_{k}.wav'
-    #        file = f'{tempdirname}/{file_name}'
-    #        wav.export(file, format='wav')
-    #        files.append(('files', open(file, 'rb')))
-    #    resp = requests.post(url=url, files=files, data=payload)
-    #    recording.clean_up()
+    with tempfile.TemporaryDirectory() as tempdirname:
+        for k, wav in enumerate(wavs):
+            file_name = f'{recording.get_file_label()}_{k}.wav'
+            file = f'{tempdirname}/{file_name}'
+            wav.export(file, format='wav')
+            files.append(('files', open(file, 'rb')))
+        resp = requests.post(url=url, files=files, data=payload)
+        recording.clean_up()
     try:
         response = resp.json()
         recording.clean_up()
@@ -203,7 +202,6 @@ class Rec(Screen):
 class Monitor(Screen):
     def __init__(self, **kwargs):
         super(Monitor, self).__init__(**kwargs)
-    #has_recording = False
         self.monitoring = False
         self.monitor_state = 'Not monitoring'
 
@@ -214,15 +212,7 @@ class Monitor(Screen):
 
         return super().on_enter(*args)
 
-    #upload_state = 'Audio Not Uploaded'
-    
-    #audio = ObjectProperty()
-    #def on_enter(self, *args):
-    #    self.update_labels()
-    #    return super().on_enter(*args)
-
     def callback_upload(self, *largs):
-        #if self.has_recording == True and state == 'ready':
         self.audio.stop()
         recording = Recording(audio_file=self.audio, user_id=self.menu_screen.ids["text_user"].text, class_id='test_mon')
         resp = upload_file(recording, URL_MON)
@@ -295,7 +285,7 @@ class LabearApp(MDApp):
     def on_start(self):
         mylogger.info("Starting application!")
         from android.permissions import request_permissions, Permission
-        request_permissions([Permission.INTERNET, Permission.RECORD_AUDIO, Permission.WAKE_LOCK])#, Permission.READ_EXTERNAL_STORAGE,Permission.WRITE_EXTERNAL_STORAGE])#Permission.READ_EXTERNAL_STORAGE, Permission.ACCESS_NETWORK_STATE, Permission.WRITE_EXTERNAL_STORAGE, Permission.MANAGE_EXTERNAL_STORAGE,Permission.WAKE_LOCK])
+        request_permissions([Permission.INTERNET, Permission.RECORD_AUDIO, Permission.WAKE_LOCK])
 
     def build(self):
         #screen = Builder.load_string(screen_helper)
