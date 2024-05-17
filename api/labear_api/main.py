@@ -12,6 +12,17 @@ import labear_api.ear as ear
 from loguru import logger
 
 # API
+from labear_api.cloud_upload import upload_many_blobs_from_stream_with_transfer_manager as upload_many_blobs_from_stream
+#import tempfile
+
+
+
+# Cloud data
+BUCKET = "data_labear"
+PROJECT = "labear"
+
+
+#API 
 URL = "http://127.0.0.1:8000"
 LEARN = "/learn"
 MONITOR = "/monitor"
@@ -19,7 +30,7 @@ URL_LEARN = URL + LEARN
 URL_MON = URL + MONITOR
 
 # DASHBOARD
-TOKEN = "lxB5VtvRuEDCh2Q3ATSK6msJKaGpQ5kHuJomgGMFtpt8iM0gYDm--VO9ZlwOj47oxV11rttLN4KIE7JTrb2ELQ=="
+TOKEN = os.environ['INFLUX_DB']
 DEV = "Dev team"
 HOST = "https://us-east-1-1.aws.cloud2.influxdata.com"
 DATA_BASE = "metrics"
@@ -82,6 +93,9 @@ async def submit(
         }
     }
     metr = {"user_id": user_id, "class_id": class_id, "time_stamp": time_stamp, "files": len(files)}
+    print(f"Attempt gc upload....")
+    upload_many_blobs_from_stream(bucket_name=BUCKET, files=files)
+    
     metrics.post(metr, LEARN)
     return submitted
 

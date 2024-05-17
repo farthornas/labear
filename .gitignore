@@ -10,5 +10,6 @@ __pycache__
 # speechbrain dirs
 models/
 audio_cache
-.buildozer
-client/application/app_images/*
+*.buildozer
+*app_images
+*client/bin/
