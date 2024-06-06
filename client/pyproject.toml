@@ -21,6 +21,7 @@ pydub = "^0.25.1"
 wavio = "^0.0.8"
 wave = "^0.0.2"
 pywave = "^0.5.0"
+pyjnius = "^1.6.1"
 
 
 [build-system]

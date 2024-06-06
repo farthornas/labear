@@ -1,5 +1,6 @@
 #: import audio_player plyer.audio
 
+
 ScreenManager:
     MenuScreen:
     Rec:
@@ -31,14 +32,14 @@ ScreenManager:
 <Rec>:
 
     name: "learn"
-    audio: audio_player
+    #audio: audio_player
     orientation: 'vertical'
     padding: '250dp'
     spacing: '20dp'
 
     MDLabel:
         id: state
-        text: 'Audio is:'+str(root.audio.state)
+        #text: 'Audio is:'+str(root.audio.state)
         pos_hint: {'center_x':0.7,'center_y':0.8}
         #size_hint_y: None
     MDTextFieldRect:
@@ -57,7 +58,7 @@ ScreenManager:
     MDLabel:
         id: audio_location
         pos_hint: {'center_x':0.7,'center_y':0.7}
-        text: 'Audio is saved at - ' + str(root.audio.file_path)
+        #text: 'Audio is saved at - ' + str(root.audio.file_path)
         #size_hint_y: None
     MDLabel:
         pos_hint: {'center_x':0.5,'center_y':0.6}
@@ -94,7 +95,7 @@ ScreenManager:
         
 <Monitor>:
     name: 'monitor'
-    audio: audio_player
+    #audio: audio_player
     MDLabel:
         id: state
         text: 'Monitor'
