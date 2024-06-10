@@ -52,16 +52,21 @@ def upload_file(recording, url, **kwargs):
     files.append(('files', open(new_name, 'rb')))
 
     payload = recording.get_rec_details()
-    payload.update(kwargs)
     
-    resp = requests.post(url=url, files=files, data=payload)
-
     try:
-        response = resp.json()
+    
+        resp = requests.post(url=url, files=files, data=payload)
+
+        response= resp.json() 
         recording.clean_up()
     except ValueError as err:
         print(f"Response from API missing: {err}")
-        return err
+        response =  err
+    except requests.exceptions.ConnectionError as con_err:
+        logger.info(f"Connection error encountered")
+        response = con_err
+    finally:
+        recording.clean_up()
     return response
 
 class MenuScreen(Screen):
@@ -107,10 +112,14 @@ class Rec(Screen):
         #state = self.audio.state
         if state == 'ready':
             self.recorder.start()
+            #TODO Implement a timer. 
+            #self.event_monitor = Clock.schedule_interval(partial(self.callback_monitor), 0.5)
         if state == 'recording':
             logger.info('Recording stopping')
             self.recorder.stop()
             self.has_recording = True
+            path = self.recorder.get_output_file()
+            self.player = MyPlayer(path)
         if state == 'reset':
             self.recorder.reset()
             self.recorder.prepare()
@@ -120,9 +129,6 @@ class Rec(Screen):
     def playback(self):
         state = self.recorder.get_state()
         if self.has_recording == True and state == 'reset':
-            path = self.recorder.get_output_file()
-            self.player = MyPlayer(path)
-
             if state == 'playing':
                 self.player.stop()
             else:
@@ -141,7 +147,9 @@ class Rec(Screen):
             logger.info(f"Record details: {self.recording.get_rec_details()}")
 
             resp = upload_file(self.recording, URL_LEARN, app_name=self.ids['text_app'].text, test='test')
-            logger.info(f"Upload: {self.recording.get_rec_details()}")
+            logger.info(f"Uploaded: {self.recording.get_rec_details()}")
+            logger.info(f"Response: {resp}")
+
             self.upload_state = 'upload_complete'
             self.has_recording = False
             self.recorder.reset()
