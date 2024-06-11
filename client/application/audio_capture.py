@@ -22,15 +22,22 @@ class MyPlayer:
         self.mPlayer = self.MediaPlayer()
         self.mPlayer.setDataSource(input_file)
         self.mPlayer.prepare()
+        self.state = "stopped"
     
     def play(self):
         self.mPlayer.start()
+        self.state = "playing"
     
     def stop(self):
         self.mPlayer.stop()
+        self.state = "stopped"
     
     def release(self):
         self.mPlayer.release()
+        self.state = 'released'
+    
+    def get_state(self):
+        return self.state
 
 class MyRecorder:
     def __init__(self):

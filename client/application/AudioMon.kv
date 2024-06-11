@@ -12,19 +12,19 @@ ScreenManager:
         id: text_user
         hint_text: "Input Username"
         required: True
-        pos_hint: {"center_y":.3, "center_x":.5}
+        pos_hint: {"center_y":.5, "center_x":.5}
         size_hint:0.5,None
         mode: "rectangle"
         multiline: False
     MDRectangleFlatButton:
         text: 'Learn new sound'
-        pos_hint: {'center_x':0.5,'center_y':0.6}
+        pos_hint: {'center_x':0.2,'center_y':0.6}
         on_press:
             root.manager.transition.direction = "right"
             root.manager.current = 'learn'
     MDRectangleFlatButton:
         text: 'Monitor'
-        pos_hint: {'center_x':0.5,'center_y':0.5}
+        pos_hint: {'center_x':0.7,'center_y':0.6}
         on_press: 
             root.manager.transition.direction = "left"
             root.manager.current = 'monitor'
@@ -46,7 +46,7 @@ ScreenManager:
         id: text_app
         hint_text: "Label the sound you want to learn"
         required: True
-        pos_hint: {"center_y":.3, "center_x":.5}
+        pos_hint: {"center_y":.45, "center_x":.5}
         size_hint:0.5,None
         mode: "rectangle"
         multiline: False
@@ -74,11 +74,11 @@ ScreenManager:
     MDRectangleFlatButton:
         id: play_button
         text: 'PLAY'
-        pos_hint: {'center_x':0.3,'center_y':0.04}
+        pos_hint: {'center_x':0.2,'center_y':0.04}
         on_release: root.playback()
     
     MDRectangleFlatButton:
-        pos_hint: {'center_x':0.7,'center_y':0.04}
+        pos_hint: {'center_x':0.8,'center_y':0.04}
         id: upload_button
         text: 'UPLOAD'
         on_release: root.upload()

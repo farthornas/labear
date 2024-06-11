@@ -119,6 +119,7 @@ class Rec(Screen):
             self.recorder.stop()
             self.has_recording = True
             path = self.recorder.get_output_file()
+            self.recording = Recording(audio_file=self.recorder, user_id=self.menu_screen.ids["text_user"].text, class_id=self.ids['text_app'].text, file_type=REC_FILE_EXT)
             self.player = MyPlayer(path)
         if state == 'reset':
             self.recorder.reset()
@@ -143,7 +144,7 @@ class Rec(Screen):
         if self.has_recording == True and state == 'reset':
             logger.info(f"Recording is ready to be uploaded")
 
-            self.recording = Recording(audio_file=self.recorder, user_id=self.menu_screen.ids["text_user"].text, class_id=self.ids['text_app'].text, file_type=REC_FILE_EXT)
+            #self.recording = Recording(audio_file=self.recorder, user_id=self.menu_screen.ids["text_user"].text, class_id=self.ids['text_app'].text, file_type=REC_FILE_EXT)
             logger.info(f"Record details: {self.recording.get_rec_details()}")
 
             resp = upload_file(self.recording, URL_LEARN, app_name=self.ids['text_app'].text, test='test')
@@ -163,6 +164,7 @@ class Rec(Screen):
         self.recording.clean_up()
         self.recorder.release()
         self.player.release()
+        self.has_recording = False
 
 
     def update_labels(self):
