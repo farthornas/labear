@@ -18,8 +18,11 @@ WORKDIR /app
 COPY pyproject.toml poetry.lock ./
 RUN touch README.md
 
-#RUN poetry install --without dev --no-root && rm -rf $POETRY_CACHE_DIR
-RUN --mount=type=cache,target=$POETRY_CACHE_DIR poetry install --without dev --no-root
+#RUN poetry install --without dev --sync --no-root && rm -rf $POETRY_CACHE_DIR
+RUN --mount=type=cache,target=$POETRY_CACHE_DIR poetry install --without dev --no-root \
+    && poetry run pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu \
+    && poetry run pip3 install speechbrain
+
 # Python runtime image
 FROM python:3.12-slim-bookworm as runtime
 
