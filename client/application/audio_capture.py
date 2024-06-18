@@ -17,12 +17,16 @@ else:
     from loguru import logger
 
 class MyPlayer:
-    def __init__(self, input_file):
+    def __init__(self):
         self.MediaPlayer = autoclass("android.media.MediaPlayer")
         self.mPlayer = self.MediaPlayer()
-        self.mPlayer.setDataSource(input_file)
+        #self.mPlayer.setDataSource(input_file)
+        #self.mPlayer.prepare()
+        self.state = ""
+    
+    def prepare(self):
         self.mPlayer.prepare()
-        self.state = "stopped"
+        self.state = 'prepared'
     
     def play(self):
         self.mPlayer.start()
@@ -32,12 +36,19 @@ class MyPlayer:
         self.mPlayer.stop()
         self.state = "stopped"
     
+    def reset(self):
+        self.mPlayer.reset()
+        self.state = 'idle'
+    
     def release(self):
         self.mPlayer.release()
         self.state = 'released'
     
     def get_state(self):
         return self.state
+    
+    def set_input_source(self, source):
+        self.mPlayer.setDataSource(source)
 
 class MyRecorder:
     def __init__(self):
@@ -51,16 +62,17 @@ class MyRecorder:
         self.reset()
     
     def reset(self):
-        logger.info(f"Setting up recorder ... ")
+        logger.info(f"Resetting recorder ... ")
         self.mRecorder = self.MediaRecorder()
         self.mRecorder.setAudioSource(self.AudioSource.MIC)
         self.mRecorder.setOutputFormat(self.OutputFormat.MPEG_4)
         self.mRecorder.setAudioEncoder(self.AudioEncoder.AAC)
         self.mRecorder.setAudioEncodingBitRate(16*44100)
         self.mRecorder.setAudioSamplingRate(44100)
-        self.output_file = 'MYAUDIO.m4a'
+        self.output_file = ""
         self.mRecorder.setOutputFile(self.output_file)
         self.state = ""
+        logger.warning(f"Recorder output and state is unset!")
 
     def prepare(self):
         logger.info(f"Preparing recorder ... ")

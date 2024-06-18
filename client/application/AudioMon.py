@@ -8,6 +8,7 @@ from kivy.properties import ObjectProperty
 from kivymd.app import MDApp
 from kivy.utils import platform
 import requests
+import time
 
 # API 
 URL = 'https://albinai.fly.dev'
@@ -44,7 +45,7 @@ def upload_file(recording, url, **kwargs):
 
     path = recording.get_file_path()
     logger.info(f"Attemping to open recording at {path}")
-
+    file_uploaded = False
     files = []
     payload = {}
 
@@ -57,17 +58,19 @@ def upload_file(recording, url, **kwargs):
     
         resp = requests.post(url=url, files=files, data=payload)
 
-        response= resp.json() 
+        response, file_uploaded = resp.json(), True
         recording.clean_up()
     except ValueError as err:
         print(f"Response from API missing: {err}")
-        response =  err
+        response, file_uploaded =  err, False
     except requests.exceptions.ConnectionError as con_err:
         logger.info(f"Connection error encountered")
-        response = con_err
-    finally:
-        recording.clean_up()
-    return response
+        response, file_uploaded = con_err, False
+    return response, file_uploaded
+
+def rec_counter(start_time):
+    time_passed = time.time() - start_time
+    return f"{time_passed:.2f}"
 
 class MenuScreen(Screen):
     pass
@@ -77,96 +80,132 @@ class Rec(Screen):
         super(Rec, self).__init__(**kwargs)
         self.has_recording = False
         self.monitor_state = 'Monitor not running'
+        self.count = 0
     
     def on_enter(self, *args):
+        self.has_recording = False
+
         self.menu_screen = self.manager.get_screen("menu")
         logger.info('Preparing to learn new sound...')
 
         if platform == 'android':
             logger.info('Android recorder used')
             self.recorder = MyRecorder()
-            self.recorder.set_output_file(REC_DEFAULT_FILE_NAME)
-            self.recorder.prepare()
             
-            #self.player = MyPlayer(self.recorder.get_output_file())
+            self.player = MyPlayer()            
+            logger.info('Resetting player')
+
+            self.player.reset()
         else:
             logger.info("plyer recorder used")
             self.audio = ObjectProperty()
             self.audio.file_path = REC_DEFAULT_FILE_NAME
         self.update_labels()
         return super().on_enter(*args)
+    
+    def callback_screen_counter(self, *largs):
+        time_recorded = rec_counter(self.rec_start)
+        if self.count >= 12:
+            self.record_button.text = f"* {str(time_recorded)}"
+            self.count = 0
+        elif self.count == 0:
+            self.record_button.text = f"* {str(time_recorded)}"
+        else:
+            self.record_button.text = f"  {str(time_recorded)}"
+        self.count += 1
 
 
     def record(self):
-        logger.info('Started listening - recording starting')
+        logger.info('Recorder button engaged')
         if platform == "android":
             recorder = self.recorder
-            path = recorder.get_output_file()
+            #path = recorder.get_output_file()
             state = recorder.get_state()
         else:
             recorder = self.audio
             path = recorder.file_path
             state = self.audio.state
-        logger.info(f"path of recording:{path}")
 
-        #state = self.audio.state
-        if state == 'ready':
-            self.recorder.start()
-            #TODO Implement a timer. 
-            #self.event_monitor = Clock.schedule_interval(partial(self.callback_monitor), 0.5)
         if state == 'recording':
+            logger.info('Stop button pressed')
             logger.info('Recording stopping')
+            
             self.recorder.stop()
+            self.event_timer.cancel()
             self.has_recording = True
-            path = self.recorder.get_output_file()
             self.recording = Recording(audio_file=self.recorder, user_id=self.menu_screen.ids["text_user"].text, class_id=self.ids['text_app'].text, file_type=REC_FILE_EXT)
-            self.player = MyPlayer(path)
-        if state == 'reset':
+        elif state == 'reset': # Recorder has stopped and user presses button to reset
+            logger.info(f'Reset button pressed')
+            self.clean_up()
+        else:
+            logger.info(f'Recorder state unset')
+            logger.info(f'Recorder setting up')
+
             self.recorder.reset()
+            self.recorder.set_output_file(REC_DEFAULT_FILE_NAME)
             self.recorder.prepare()
+            self.recorder.start()
+            self.rec_start = time.time()
+            self.record_button = self.ids['record_button']
+            self.event_timer = Clock.schedule_interval(partial(self.callback_screen_counter), 0.1)
+
+
         self.upload_state = 'Audio Not Uploaded'
         self.update_labels() 
 
     def playback(self):
-        state = self.recorder.get_state()
-        if self.has_recording == True and state == 'reset':
-            if state == 'playing':
+        logger.info('Sound Playback pressed')
+        state_rec = self.recorder.get_state()
+        state_player = self.player.get_state()
+        logger.info(f'Player state is {state_player}')
+
+
+        if self.has_recording == True and state_rec == 'reset':
+            if state_player == 'playing':
+                logger.info('Stop playing recording')
                 self.player.stop()
             else:
+                logger.info('Play recording')
+                logger.info(f'Player state is: {state_player}')
+                logger.info('Resetting player')
+                self.player.reset()
+                self.player.set_input_source(str(self.recorder.get_output_file()))
+                self.player.prepare()
                 self.player.play()
         self.update_labels()
     
     def upload(self):
-        #self.update_labels()
         state = self.recorder.get_state()
         logger.info(f"Attempt upload...")
             
         if self.has_recording == True and state == 'reset':
             logger.info(f"Recording is ready to be uploaded")
 
-            #self.recording = Recording(audio_file=self.recorder, user_id=self.menu_screen.ids["text_user"].text, class_id=self.ids['text_app'].text, file_type=REC_FILE_EXT)
             logger.info(f"Record details: {self.recording.get_rec_details()}")
+            response, file_uploaded = upload_file(self.recording, URL_LEARN, app_name=self.ids['text_app'].text, test='test')
 
-            resp = upload_file(self.recording, URL_LEARN, app_name=self.ids['text_app'].text, test='test')
-            logger.info(f"Uploaded: {self.recording.get_rec_details()}")
-            logger.info(f"Response: {resp}")
+            if file_uploaded:
+                logger.info(f"Uploaded: {self.recording.get_rec_details()}")
+                self.upload_state = 'upload_complete'
+                self.clean_up()
+            else:
+                logger.info(f"Recording not uploaded!")
+                self.upload_state = 'upload_fail'
 
-            self.upload_state = 'upload_complete'
-            self.has_recording = False
-            self.recorder.reset()
-            self.recorder.prepare()
-            self.player.release()
+            logger.info(f"Response: {response}")
         self.update_labels()
     
     def clean_up(self):
-        logger.info(f"Cleanup recording and release audio recorder/player")
-
+        logger.info(f"Cleanup recording")
+        logger.info(f'Resetting recorder and preparing for new recording')
+        
+        self.recorder.reset()
         self.recording.clean_up()
-        self.recorder.release()
-        self.player.release()
+        self.recorder.set_output_file(REC_DEFAULT_FILE_NAME)
+        self.recorder.prepare()
         self.has_recording = False
-
-
+        self.count = 0
+        
     def update_labels(self):
         record_button = self.ids['record_button']
         play_button = self.ids['play_button']
@@ -175,41 +214,52 @@ class Rec(Screen):
         upload_state = self.ids['upload_state_label']
         text_app = self.ids['text_app']
 
-        #state = self.audio.state
-        state = self.recorder.get_state()
+        rec_state = self.recorder.get_state()
+        play_state = self.player.get_state()
+
         play_button.disabled  = not self.has_recording
         upload_button.disabled  = not self.has_recording
 
-        state_label.text = "AudioPlayer State: " + state
+        state_label.text = "Recorder State: " + rec_state
 
-        if state == 'ready':
-            record_button.text = 'START RECORD'
+        if rec_state == 'ready':
+            record_button.text = 'RECORD'
             play_button.text = 'PLAY AUDIO'
             record_button.disabled = False
+            upload_button.disabled = True
             text_app.disabled = False
         
-        if state == 'recording':
-            record_button.text = 'STOP RECORD'
+        elif rec_state == 'recording':
+            record_button.text = 'RECORD'
             upload_button.disabled = True
             play_button.disabled = True
             text_app.disabled = True
-            upload_state.text = 'Audio Not Uploaded'           
+            upload_state.text = 'Audio Not Uploaded'
+        
+        elif rec_state =='reset':
+            record_button.text = 'RESET'
+            play_button.text = 'PLAY AUDIO'
+            record_button.disabled = False
+            text_app.disabled = False
+        else:
+            record_button.disabled = False
 
-        if state == 'playing':
+        if play_state == 'playing':
             play_button.text = 'STOP AUDIO'
             record_button.disabled = True
             upload_button.disabled = True
             text_app.disabled = True
-        
-        if state =='reset':
-            record_button.text = 'START RECORD'
+
+        if play_state == 'stopped':
             play_button.text = 'PLAY AUDIO'
             record_button.disabled = False
-            text_app.disabled = False
         
         if self.upload_state == 'upload_complete':
             upload_button.disabled = True
             upload_state.text = 'Audio Uploaded'
+        elif self.upload_state == 'upload_fail':
+            upload_button.disabled = False
+            upload_state.text = 'Audio Upload Fail, pls retry!'
     has_recording = False
     upload_state = 'Audio Not Uploaded'
 
@@ -219,6 +269,7 @@ class Monitor(Screen):
         super(Monitor, self).__init__(**kwargs)
         self.monitoring = False
         self.monitor_state = 'Not monitoring'
+        self.upload_tries = 0
 
     
     def on_enter(self, *args):
@@ -236,10 +287,25 @@ class Monitor(Screen):
     def callback_upload(self, *largs):
         self.recorder.stop()
         self.recording = Recording(audio_file=self.recorder, user_id=self.menu_screen.ids["text_user"].text, class_id='test_mon', file_type=REC_FILE_EXT)
-        resp = upload_file(self.recording, URL_MON)
+        response, file_uploaded = upload_file(self.recording, URL_MON)
+        if not file_uploaded and self.upload_tries < 1:
+            logger.info(f"Recording not uploaded, retrying once")
+            self.event_upload = Clock.schedule_once(partial(self.callback_upload), 3)
+            self.upload_tries += 1
+            self.upload_state = 'upload_fail'
+            
+        else:
+            #logger.info(f"Uploaded: {self.recording.get_rec_details()}")
+            self.upload_state = 'upload_complete'
+            self.has_recording = False
+            self.recorder.reset()
+            self.recorder.prepare()
+            self.player.release()
+            logger.info(f"Response: {response}")
+        self.update_labels()
+
+
         logger.info(f"Upload: {self.recording.get_rec_details()}")
-        self.recorder.reset()
-        self.recorder.prepare()
 
     def callback_monitor(self, *largs):
         self.recorder.start()
