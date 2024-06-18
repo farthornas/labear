@@ -312,8 +312,6 @@ class Monitor(Screen):
         self.event_upload = Clock.schedule_once(partial(self.callback_upload), 5)
 
     def monitor(self):
-        #state = self.audio.state
-        #self.monitoring = True
         self.upload_state = 'Audio Not Uploaded'
         if self.monitoring:
             self.stop_monitor()
