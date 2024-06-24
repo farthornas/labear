@@ -17,10 +17,7 @@ python-for-android = "^2024.1.21"
 setuptools = "^69.2.0"
 cython = "^3.0.10"
 loguru = "^0.7.2"
-pydub = "^0.25.1"
-wavio = "^0.0.8"
 wave = "^0.0.2"
-pywave = "^0.5.0"
 pyjnius = "^1.6.1"
 
 
