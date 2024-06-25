@@ -41,15 +41,17 @@ else:
 
 
 
-def upload_file(recording, url, **kwargs):
+def upload_file(recording, url, rename=True, **kwargs):
 
     path = recording.get_file_path()
     logger.info(f"Attemping to open recording at {path}")
     file_uploaded = False
     files = []
     payload = {}
-
-    new_name = recording.rename_rec()
+    if rename:
+        new_name = recording.rename_rec()
+    else:
+        new_name = path
     files.append(('files', open(new_name, 'rb')))
 
     payload = recording.get_rec_details()
@@ -91,7 +93,7 @@ class Rec(Screen):
         if platform == 'android':
             logger.info('Android recorder used')
             self.recorder = MyRecorder()
-            
+            self.clean_up()            
             self.player = MyPlayer()            
             logger.info('Resetting player')
 
@@ -198,13 +200,24 @@ class Rec(Screen):
     def clean_up(self):
         logger.info(f"Cleanup recording")
         logger.info(f'Resetting recorder and preparing for new recording')
-        
+        if self.recorder.get_state() == "recording":
+            self.recorder.stop()
+            self.event_timer.cancel() 
         self.recorder.reset()
-        self.recording.clean_up()
+        if self.has_recording:
+            self.recording.clean_up()
         self.recorder.set_output_file(REC_DEFAULT_FILE_NAME)
         self.recorder.prepare()
         self.has_recording = False
         self.count = 0
+    
+    def menu(self):
+        if self.player.get_state() == 'playing':
+            self.player.stop()
+        self.clean_up()
+        self.recorder.release()
+        self.player.release()
+
         
     def update_labels(self):
         record_button = self.ids['record_button']
@@ -270,6 +283,7 @@ class Monitor(Screen):
         self.monitoring = False
         self.monitor_state = 'Not monitoring'
         self.upload_tries = 0
+        self.has_recording = False
 
     
     def on_enter(self, *args):
@@ -279,35 +293,53 @@ class Monitor(Screen):
         if platform == 'android':
             logger.info('Android recorder used')
             self.recorder = MyRecorder()
-            self.recorder.set_output_file(REC_DEFAULT_FILE_NAME)
-            self.recorder.prepare()
         self.update_labels()
         return super().on_enter(*args)
 
     def callback_upload(self, *largs):
-        self.recorder.stop()
-        self.recording = Recording(audio_file=self.recorder, user_id=self.menu_screen.ids["text_user"].text, class_id='test_mon', file_type=REC_FILE_EXT)
-        response, file_uploaded = upload_file(self.recording, URL_MON)
+        if self.recorder.get_state() == "recording":
+            logger.info("Recording stopping")
+            self.recorder.stop()
+
+        if self.upload_tries == 0:    
+            self.recording = Recording(audio_file=self.recorder, user_id=self.menu_screen.ids["text_user"].text, class_id='test_mon', file_type=REC_FILE_EXT)
+            self.has_recording = True
+            response, file_uploaded = upload_file(self.recording, URL_MON)
+        else:
+            response, file_uploaded = upload_file(self.recording, URL_MON, rename=False)
+
+
+        
+        
         if not file_uploaded and self.upload_tries < 1:
-            logger.info(f"Recording not uploaded, retrying once")
+            logger.info(f"Recording not uploaded. Response from server: {response}")
+            logger.info(f'Retrying once')
             self.event_upload = Clock.schedule_once(partial(self.callback_upload), 3)
             self.upload_tries += 1
             self.upload_state = 'upload_fail'
             
-        else:
-            #logger.info(f"Uploaded: {self.recording.get_rec_details()}")
+        elif file_uploaded:
+            logger.info(f"Uploaded: {self.recording.get_rec_details()}")
             self.upload_state = 'upload_complete'
-            self.has_recording = False
-            self.recorder.reset()
-            self.recorder.prepare()
-            self.player.release()
+            self.clean_up()
             logger.info(f"Response: {response}")
+        else:
+            logger.info(f"Recording not uploaded. Response from server: {response}")
+            self.upload_tries += 1
+            self.upload_state = 'upload_fail'
+            self.clean_up()
+
         self.update_labels()
 
 
         logger.info(f"Upload: {self.recording.get_rec_details()}")
 
     def callback_monitor(self, *largs):
+        logger.info("Recorder starting...")
+        state = self.recorder.get_state()
+        logger.info(f"Recorder state:{state}")
+        if state != "ready":
+            self.recorder.clean_up()
         self.recorder.start()
         self.event_upload = Clock.schedule_once(partial(self.callback_upload), 5)
 
@@ -316,8 +348,10 @@ class Monitor(Screen):
         if self.monitoring:
             self.stop_monitor()
         else:
+            logger.info("Starting monitoring")
             self.monitoring = True
             self.monitor_state = 'Monitoring'
+            self.clean_up()
             self.recorder.start()
             self.event_upload = Clock.schedule_once(partial(self.callback_upload), 5)
             self.event_monitor = Clock.schedule_interval(partial(self.callback_monitor), 20)
@@ -325,15 +359,34 @@ class Monitor(Screen):
 
 
     def stop_monitor(self):
-        
+        logger.info("Stopping monitoring")
         if self.monitoring:
             self.monitor_state = 'Not Monitoring'
+        if self.recorder.get_state() == "recording":
+            self.recorder.stop()
+        if self.monitoring:
+            self.event_monitor.cancel()
+            self.event_upload.cancel()
+        self.clean_up()
         self.monitoring = False
-        self.recorder.stop()
-        self.event_monitor.cancel()
-        self.event_upload.cancel()
         self.update_labels()
 
+    def clean_up(self):
+        logger.info(f"Cleanup recording")
+        logger.info(f'Resetting recorder and preparing for new recording')
+        
+        self.recorder.reset()
+        if self.has_recording:
+            self.recording.clean_up()
+        self.recorder.set_output_file(REC_DEFAULT_FILE_NAME)
+        self.recorder.prepare()
+        self.has_recording = False
+        self.upload_tries = 0
+    
+    def menu(self):
+        self.stop_monitor()
+        self.recorder.release()
+    
     def update_labels(self):
         monitor_button = self.ids['monitor_button']
         state_label = self.ids['state']

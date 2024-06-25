@@ -18,13 +18,13 @@ ScreenManager:
         multiline: False
     MDRectangleFlatButton:
         text: 'Learn new sound'
-        pos_hint: {'center_x':0.2,'center_y':0.6}
+        pos_hint: {'center_x':0.17,'center_y':0.6}
         on_press:
             root.manager.transition.direction = "right"
             root.manager.current = 'learn'
     MDRectangleFlatButton:
         text: 'Monitor'
-        pos_hint: {'center_x':0.7,'center_y':0.6}
+        pos_hint: {'center_x':0.9,'center_y':0.6}
         on_press: 
             root.manager.transition.direction = "left"
             root.manager.current = 'monitor'
@@ -88,7 +88,7 @@ ScreenManager:
         text: 'Menu'
         pos_hint: {'center_x':0.9,'center_y':0.55}
         on_release:
-            #root.clean_up()
+            root.menu()
             root.manager.transition.direction = "left"
             root.manager.current = "menu"
         
@@ -113,9 +113,10 @@ ScreenManager:
         text: 'MONITOR'
         on_release: root.monitor()
     MDRectangleFlatButton:
-        text: 'Back'
-        pos_hint: {'center_x':0.5,'center_y':0.1}
+        text: 'Menu'
+        pos_hint: {'center_x':0.1,'center_y':0.55}
         on_press:
+            root.menu()
             root.manager.transition.direction = "right"  
             root.manager.current = 'menu'
      
