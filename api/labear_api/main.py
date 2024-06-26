@@ -120,7 +120,6 @@ async def monitor(
         }
     }
     metr = {"user_id": user_id, "class_id": class_id, "time_stamp": time_stamp, "files": len(files)}
-    metrics.post(metr, MONITOR)
 
     # just do single (first) file for now
     # TODO handle multiple files
@@ -131,6 +130,9 @@ async def monitor(
         "prediction": prediction,
         "score": score.item()
     }
+    metr["prediction"] = response["prediction"]
+    metrics.post(metr, MONITOR)
+
     return response
 
 # Redirect root url to docs
