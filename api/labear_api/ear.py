@@ -7,7 +7,8 @@ from typing import BinaryIO
 from speechbrain.inference.classifiers import EncoderClassifier
 import torchaudio
 import torch
-
+import tempfile
+from pydub import AudioSegment
 classifier = EncoderClassifier.from_hparams(source="speechbrain/urbansound8k_ecapa", savedir="models/gurbansound8k_ecapa")    
 
 def load_audio(file: BinaryIO):
@@ -15,7 +16,11 @@ def load_audio(file: BinaryIO):
     This implementation copies EncoderClassifier.load_audio, but accepts a binary file 
     object instead of a file path.
     """
-    signal, sr = torchaudio.load(file, channels_first=False)
+    signal, sr = None, None
+    with tempfile.TemporaryFile() as tp:
+        audio = AudioSegment.from_file(file, format='m4a')
+        audio.export(tp, format='wav')
+        signal, sr = torchaudio.load(tp, channels_first=False)
     return classifier.audio_normalizer(signal, sr)
 
 def predict(in_file: BinaryIO):
