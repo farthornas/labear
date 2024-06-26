@@ -1,3 +1,9 @@
-test_submit.wav
+labear_api/test_api_submit.py
+labear_api/test_submit.wav
 uploaded_files
-labear-api/services/
+.DS_Store
+.dockerignore
+.gc
+.venv
+__pycache__
+labear_api/__pycache__

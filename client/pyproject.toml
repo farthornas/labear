@@ -11,11 +11,14 @@ python = "^3.12"
 requests = "^2.31.0"
 Kivy = "^2.3.0"
 kivymd = "^1.2.0"
-pandas = "^2.2.0"
 plyer = "^2.1.0"
 pyobjus = "^1.2.3"
-audiosegment = "^0.23.0"
+python-for-android = "^2024.1.21"
 setuptools = "^69.2.0"
+cython = "^3.0.10"
+loguru = "^0.7.2"
+wave = "^0.0.2"
+pyjnius = "^1.6.1"
 
 
 [build-system]
