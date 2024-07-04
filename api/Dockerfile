@@ -22,11 +22,13 @@ RUN touch README.md
 RUN --mount=type=cache,target=$POETRY_CACHE_DIR poetry install --without dev --no-root \
     && poetry run pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu \
     && poetry run pip3 install speechbrain
+    
 
 # Python runtime image
 FROM python:3.12-slim-bookworm as runtime
 
-RUN pip install poetry==1.7.1 
+RUN pip install poetry==1.7.1 && apt-get update && apt-get install ffmpeg libavcodec-extra -y
+
 COPY pyproject.toml poetry.lock ./
 
 ENV VIRTUAL_ENV=/app/.venv \
