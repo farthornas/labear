@@ -8,6 +8,8 @@ import aiofiles
 from dataclasses import dataclass
 from influxdb_client_3 import InfluxDBClient3, Point
 from influxdb_client.client.write_api import SYNCHRONOUS, ASYNCHRONOUS
+from influxdb_client import InfluxDBClient
+
 import labear_api.ear as ear
 from loguru import logger
 
@@ -34,8 +36,8 @@ TOKEN = os.environ['INFLUX_DB']
 DEV = "Dev team"
 HOST = "https://us-east-1-1.aws.cloud2.influxdata.com"
 DATA_BASE = "metrics"
-POST_LEARN = "/learn"
-POST_MONITOR = "/monitor"
+DASHBOARD_LEARN = LEARN.split('/')[-1]
+DASHBOARD_MONITOR = MONITOR.split('/')[-1]
 
 
 @dataclass
@@ -47,12 +49,43 @@ class Metrics:
 
     def __post_init__(self) -> None:
         self.client = InfluxDBClient3(host=self.host, token=self.token, org=self.org, database=self.database)
+    """
+            Example:
+            .. code-block:: python
 
-    def post(self, data, application):
+                # Use default dictionary structure
+                dict_structure = {
+                    "measurement": "h2o_feet",
+                    "tags": {"location": "coyote_creek"},
+                    "fields": {"water_level": 1.0},
+                    "time": 1
+                }
+    """
+    def post_records(self, data, application):
+        record = {}
+        record['fields'] = {}
+        with InfluxDBClient(HOST, TOKEN) as client:
+            time = data['request_info'].pop('time_stamp')
+            files = data['request_info']['files']
+            for file in files:
+                record['fields'].update(file)
+            record['time'] = int(time)
+            record['measurement'] = application
+            record['tags'] = data['request_info']
+            if application == DASHBOARD_MONITOR:
+                record['fields'].update(data['prediction']['probabilities'])
+             # use the client to access the necessary APIs
+            # for example, write data using the write_api
+            with client.write_api() as writer:
+                writer.write(bucket=self.database, org=self.org, record=record, write_precision='ms')
+
+    def post_data_point(self, data, application):
+        data = flatten(data)
         point = Point(application)
         for key, value in data.items():
             point.field(key, value)
-        self.client.write(record=point, write_precision="s", timeout=5)
+        self.client.write(record=point, write_precision="ms", timeout=5)
+    
 
 
 app = FastAPI()
@@ -83,21 +116,21 @@ async def submit(
 
     log_fileinfo(files)
 
-    submitted = {
-        "Payload": {
+    response = {
+        "request_info": {
             "user_id": user_id,
             "class_id": class_id,
             "time_stamp": time_stamp,
-            "files_size": [file.size for file in files],
-            "Filenames": [file.filename for file in files],
+            "files": [
+                {"size": file.size, "name": file.filename} for file in files
+            ]
         }
     }
-    metr = {"user_id": user_id, "class_id": class_id, "time_stamp": time_stamp, "files": len(files)}
     print(f"Attempt gc upload....")
     upload_many_blobs_from_stream(bucket_name=BUCKET, files=files)
     
-    metrics.post(metr, LEARN)
-    return submitted
+    metrics.post_records(response, DASHBOARD_LEARN)
+    return response
 
 
 @app.post(MONITOR)
@@ -119,7 +152,6 @@ async def monitor(
             ]
         }
     }
-    metr = {"user_id": user_id, "class_id": class_id, "time_stamp": time_stamp, "files": len(files)}
 
     # just do single (first) file for now
     # TODO handle multiple files
@@ -130,8 +162,7 @@ async def monitor(
         "prediction": prediction,
         "score": score.item()
     }
-    metr["prediction"] = response["prediction"]
-    metrics.post(metr, MONITOR)
+    metrics.post_records(response, DASHBOARD_MONITOR)
 
     return response
 
