@@ -29,7 +29,7 @@ FROM python:3.12-slim-bookworm as runtime
 
 RUN pip install poetry==1.7.1 && apt-get update && apt-get install ffmpeg libavcodec-extra -y
 
-    COPY pyproject.toml poetry.lock ./
+COPY pyproject.toml poetry.lock ./
 
 ENV VIRTUAL_ENV=/app/.venv \
     PATH="/app/.venv/bin:$PATH"
