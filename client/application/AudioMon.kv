@@ -101,14 +101,20 @@ ScreenManager:
         id: state
         text: 'Monitor'
         halign: 'center'
-        pos_hint: {'center_x':0.5,'center_y':0.7}
+        pos_hint: {'center_x':0.3,'center_y':0.7}
     MDLabel:
-        pos_hint: {'center_x':0.5,'center_y':0.6}
         id: upload_state_label
         text: ""
+        halign: 'center'
+        pos_hint: {'center_x':0.3,'center_y':0.65}
+    MDLabel:
+        id: prediction
+        text: ""
+        halign: 'center'
+        pos_hint: {'center_x':0.4,'center_y':0.6}
 
     MDRectangleFlatButton:
-        pos_hint: {'center_x':0.5,'center_y':0.5}
+        pos_hint: {'center_x':0.5,'center_y':0.4}
         id: monitor_button
         text: 'MONITOR'
         on_release: root.monitor()

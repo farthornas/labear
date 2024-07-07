@@ -284,6 +284,9 @@ class Monitor(Screen):
         self.monitor_state = 'Not monitoring'
         self.upload_tries = 0
         self.has_recording = False
+        self.prediction = "" 
+        self.score = 0
+        self.upload_state = ""
 
     
     def on_enter(self, *args):
@@ -323,6 +326,8 @@ class Monitor(Screen):
             self.upload_state = 'upload_complete'
             self.clean_up()
             logger.info(f"Response: {response}")
+            self.prediction = response['prediction']['prediction'][0]
+            self.score = float(response['prediction']['score'])
         else:
             logger.info(f"Recording not uploaded. Response from server: {response}")
             self.upload_tries += 1
@@ -332,14 +337,14 @@ class Monitor(Screen):
         self.update_labels()
 
 
-        logger.info(f"Upload: {self.recording.get_rec_details()}")
+        #logger.info(f"Upload: {self.recording.get_rec_details()}")
 
     def callback_monitor(self, *largs):
         logger.info("Recorder starting...")
         state = self.recorder.get_state()
         logger.info(f"Recorder state:{state}")
         if state != "ready":
-            self.recorder.clean_up()
+            self.clean_up()
         self.recorder.start()
         self.event_upload = Clock.schedule_once(partial(self.callback_upload), 5)
 
@@ -391,26 +396,35 @@ class Monitor(Screen):
         monitor_button = self.ids['monitor_button']
         state_label = self.ids['state']
         upload_state = self.ids['upload_state_label']
+        prediction_state = self.ids['prediction']
 
         state = self.recorder.get_state()
 
-        state_label.text = "AudioPlayer State: " + state
-
+        state_label.text = f"AudioPlayer State: {state}"
+        upload_state_text = ""
+        prediction_state_text = f"Currently hearing: {self.prediction} ({int(self.score*100)}% sure...)"
         if state == 'ready':
             monitor_button.text = 'MONITOR'
         
         if self.monitoring:
             monitor_button.text = 'STOP MONITOR'
-            upload_state.text = 'Audio Not Uploaded'
+            prediction_state.text = prediction_state_text
+
+            if self.upload_state == 'upload_complete':
+                upload_state_text = 'Audio Uploaded'
+            else:
+                upload_state_text = 'Audio not uploaded'
 
         if not self.monitoring:
             monitor_button.text = 'MONITOR'
 
-        
-        if self.monitor_state == 'upload_complete':
-            upload_state.text = 'Audio Uploaded'
+        upload_state.text = f"Upload State: {upload_state_text}"
+        prediction_state.text = prediction_state_text
+
+        #if self.monitor_state == 'upload_complete':
+        #    upload_state.text = 'Audio Uploaded'
     has_recording = False
-    upload_state = 'Audio Not Uploaded'
+    #upload_state = 'Audio Not Uploaded'
 
 
 
