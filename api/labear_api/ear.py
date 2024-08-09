@@ -9,7 +9,30 @@ import torchaudio
 import torch
 import tempfile
 from pydub import AudioSegment
-classifier = EncoderClassifier.from_hparams(source="speechbrain/urbansound8k_ecapa", savedir="models/gurbansound8k_ecapa")    
+from labear_api.cloud_connect import download_blob
+from labear_api.main import BUCKET, PROJECT
+from google.api_core.exceptions import NotFound
+
+
+#classifier = EncoderClassifier.from_hparams(source="speechbrain/urbansound8k_ecapa", savedir="models/gurbansound8k_ecapa")    
+
+CLASSIFIER_PATH = "data/"
+CLASSIFIER_NAME = "fine_tuned.pt"
+
+
+def load_classifier(user: str):
+    path = CLASSIFIER_PATH + user + "/" + CLASSIFIER_NAME
+    try:
+        classifier = torch.load(path)
+    except FileNotFoundError as e:
+        print(f"Could not load classifier locally, will try to download classifier...")
+        gc_path = user + "/" + CLASSIFIER_NAME
+        download_blob(bucket_name=BUCKET, source_blob_name=gc_path, destination_file_name=path)
+    except NotFound:
+        print(f"No classifier available, reverting to speechbrain/urbansound8k_ecapa")
+        classifier = EncoderClassifier.from_hparams(source="speechbrain/urbansound8k_ecapa", savedir="models/gurbansound8k_ecapa")    
+    else:
+        classifier = torch.load(path)
 
 def load_audio(file: BinaryIO):
     """
