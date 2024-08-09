@@ -14,7 +14,7 @@ import labear_api.ear as ear
 from loguru import logger
 
 # API
-from labear_api.cloud_upload import upload_many_blobs_from_stream_with_transfer_manager as upload_many_blobs_from_stream
+from labear_api.cloud_connect import upload_many_blobs_from_stream_with_transfer_manager as upload_many_blobs_from_stream
 #import tempfile
 
 
@@ -156,7 +156,7 @@ async def monitor(
     # just do single (first) file for now
     # TODO handle multiple files
     file = files[0].file
-    probabilities, prediction, score  = ear.predict(file)
+    probabilities, prediction, score  = ear.predict(user_id, file)
     response["prediction"] = {
         "probabilities": probabilities,
         "prediction": prediction,
