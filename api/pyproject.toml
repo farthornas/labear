@@ -25,6 +25,8 @@ ipykernel = "^6.29.3"
 speechbrain = "^1.0.0"
 torch = "^2.2.1"
 torchaudio = "^2.2.1"
+ipython = "^8.26.0"
+audiosegment = "^0.23.0"
 
 [tool.poetry.scripts]
 start = "labear_api.start:start"

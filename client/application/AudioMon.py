@@ -374,6 +374,8 @@ class Monitor(Screen):
             self.event_upload.cancel()
         self.clean_up()
         self.monitoring = False
+        self.prediction = ""
+        self.score = 0
         self.update_labels()
 
     def clean_up(self):
