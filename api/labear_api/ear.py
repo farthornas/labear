@@ -14,13 +14,15 @@ from labear_api.main import BUCKET, PROJECT
 from google.api_core.exceptions import NotFound
 
 
-#classifier = EncoderClassifier.from_hparams(source="speechbrain/urbansound8k_ecapa", savedir="models/gurbansound8k_ecapa")    
-
 CLASSIFIER_PATH = "data/"
 CLASSIFIER_NAME = "fine_tuned.pt"
 
 
 def load_classifier(user: str):
+    """
+    Attempt to load a finetuned classifier for a user. 
+    If the user is not registered the classifier speechbrain/urbansound8k_ecapa will be used
+    """
     path = CLASSIFIER_PATH + user + "/" + CLASSIFIER_NAME
     try:
         classifier = torch.load(path)
@@ -29,10 +31,12 @@ def load_classifier(user: str):
         gc_path = user + "/" + CLASSIFIER_NAME
         download_blob(bucket_name=BUCKET, source_blob_name=gc_path, destination_file_name=path)
     except NotFound:
-        print(f"No classifier available, reverting to speechbrain/urbansound8k_ecapa")
+        print(f"No classifier available for user: {user}. Reverting to using classifier: speechbrain/urbansound8k_ecapa")
         classifier = EncoderClassifier.from_hparams(source="speechbrain/urbansound8k_ecapa", savedir="models/gurbansound8k_ecapa")    
     else:
         classifier = torch.load(path)
+    
+    return classifier
 
 def load_audio(file: BinaryIO):
     """
@@ -43,15 +47,16 @@ def load_audio(file: BinaryIO):
     with tempfile.TemporaryFile() as tp:
         audio = AudioSegment.from_file(file, format='m4a')
         audio.export(tp, format='wav')
-        signal, sr = torchaudio.load(tp, channels_first=False)
-    return classifier.audio_normalizer(signal, sr)
+    return torchaudio.load(tp, channels_first=False)
 
-def predict(in_file: BinaryIO):
+def predict(user: str, in_file: BinaryIO):
     """
     This implemetation copies EncoderClassifier.classify_file, but accepts a binary file 
     object instead of a file path.
     """
-    waveform = load_audio(in_file)
+    classifier = load_classifier(user)
+    signal, sr = load_audio(in_file)
+    waveform = classifier.audio_normalizer(signal, sr)
     batch = waveform.unsqueeze(0)
     rel_length = torch.tensor([1.0])
     emb = classifier.encode_batch(batch, rel_length)
