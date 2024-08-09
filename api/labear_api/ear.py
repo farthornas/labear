@@ -10,7 +10,6 @@ import torch
 import tempfile
 from pydub import AudioSegment
 from labear_api.cloud_connect import download_blob
-from labear_api.main import BUCKET, PROJECT
 from google.api_core.exceptions import NotFound
 
 
@@ -29,7 +28,7 @@ def load_classifier(user: str):
     except FileNotFoundError as e:
         print(f"Could not load classifier locally, will try to download classifier...")
         gc_path = user + "/" + CLASSIFIER_NAME
-        download_blob(bucket_name=BUCKET, source_blob_name=gc_path, destination_file_name=path)
+        download_blob(bucket_name="data_labear", source_blob_name=gc_path, destination_file_name=path)
     except NotFound:
         print(f"No classifier available for user: {user}. Reverting to using classifier: speechbrain/urbansound8k_ecapa")
         classifier = EncoderClassifier.from_hparams(source="speechbrain/urbansound8k_ecapa", savedir="models/gurbansound8k_ecapa")    
