@@ -48,7 +48,7 @@ def predict(user: str, in_file: BinaryIO):
         # using the classifier's index to label dict 
         probabilities = {classifier.hparams.label_encoder.ind2lab[i]: prob for i, prob in enumerate(probs.tolist())}
     else:
-        prediction = cats[index]
+        prediction = [cats[index]]
         probabilities = {cats[i]: prob for i, prob in enumerate(probs.tolist())}
     return probabilities, prediction, score
 
