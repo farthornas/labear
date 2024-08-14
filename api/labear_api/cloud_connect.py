@@ -196,6 +196,13 @@ def download_blob(bucket_name, source_blob_name, destination_file_name):
         )
     )
 
+def gc_is_file(bucket_name, source_blob_name):
+    storage_client = storage_client_gc()
+
+    bucket = storage_client.bucket(bucket_name)
+
+    return storage.Blob(bucket=bucket, name=source_blob_name).exists(storage_client)
+
 def main():
 
     print("Hello World!")
@@ -203,11 +210,9 @@ def main():
     #print(f"Uploading file!")
     #upload_many_blobs_from_stream_with_transfer_manager(bucket_name=bucket_name, files=['test_submit.wav'])
     print(f"Downloading file")
-    try:
-        download_blob(bucket_name=bucket_name, source_blob_name="djdjs_rjfj_1722066255057.m4a", destination_file_name="downloaded_file.m4a")
-    except NotFound as e:
-        print("Could not find file")
+    if is_file(bucket_name=bucket_name, source_blob_name="djdjs_rjfj_1722066255057.m4a"):
+        print("File present")
     else:
-        print("found it!")
+        print("Not present!")
 if __name__ == "__main__":
     main()
