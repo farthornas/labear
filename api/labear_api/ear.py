@@ -23,6 +23,7 @@ def load_audio(file: BinaryIO):
     signal, sr = None, None
     with tempfile.TemporaryFile() as tp:
         audio = AudioSegment.from_file(file, format='m4a')
+        audio = audio[500:] # Remove first 0.5 second to omit blank signal at beginning of recording
         audio.export(tp, format='wav')
         signal, sr = torchaudio.load(tp, channels_first=False)
     return signal, sr
