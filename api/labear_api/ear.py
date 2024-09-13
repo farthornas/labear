@@ -13,7 +13,7 @@ from labear_api.brain import Brains
 
 default_classifier = EncoderClassifier.from_hparams(source="speechbrain/urbansound8k_ecapa", savedir="models/gurbansound8k_ecapa")    
 
-brains = Brains(["g28", "g28_huawei", "engine"]) # TODO Make Brains autoload all users so list is not needed in ears.
+brains = Brains()
 
 def load_audio(file: BinaryIO):
     """
@@ -56,11 +56,7 @@ def predict(user: str, in_file: BinaryIO):
 
 def main():
 
-    users = ["g28",'g29']
-    #brains = Brains(users)
-    
-    classifier, cats = brains.brain("g28")
-    print(classifier, cats)
+    classifier, cats = brains.brain("g28_huawei")
     pred = classifier.classify_file("/Users/jonas/Library/CloudStorage/OneDrive-UniversityofExeter/sound_recognition/api/labear_api/test_submit.wav")
     print(pred)
 if __name__ == "__main__":

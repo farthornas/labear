@@ -203,16 +203,44 @@ def gc_is_file(bucket_name, source_blob_name):
 
     return storage.Blob(bucket=bucket, name=source_blob_name).exists(storage_client)
 
+def gc_list_blobs(bucket_name, prefix, delimiter=None):
+    storage_client = storage_client_gc()
+
+    bucket = storage_client.bucket(bucket_name)
+    
+    blobs = bucket.list_blobs(prefix=prefix, delimiter=delimiter)
+    blob_names = []
+    prefixes = []
+    for blob in blobs:
+        blob_names.append(blob.name)
+    if delimiter:
+        for pre in blobs.prefixes:
+            prefixes.append(pre)
+
+    return blob_names, prefixes
+
+def gc_list_dirs(bucket_name, path):
+    if path[-1] != '/':
+        path += '/'
+    blobs, dirs = gc_list_blobs(bucket_name=bucket_name, prefix=path, delimiter='/')
+    clean = []
+    if len(dirs) > 0:
+        for dir in dirs:
+            clean.append(dir.split(path)[-1])
+    return clean
+        
 def main():
 
     print("Hello World!")
     bucket_name = "data_labear"
+    dirs = gc_list_dirs(bucket_name=bucket_name, path='users')
+    users = [dir.strip('/') for dir in dirs]
+    
+    print(users)
+    #print(list(blobs))for prefix in blobs.prefixes:
+    #    print(prefix)
     #print(f"Uploading file!")
     #upload_many_blobs_from_stream_with_transfer_manager(bucket_name=bucket_name, files=['test_submit.wav'])
-    print(f"Downloading file")
-    if is_file(bucket_name=bucket_name, source_blob_name="djdjs_rjfj_1722066255057.m4a"):
-        print("File present")
-    else:
-        print("Not present!")
+
 if __name__ == "__main__":
     main()
