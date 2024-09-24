@@ -33,9 +33,11 @@ def predict(user: str, in_file: BinaryIO):
     This implemetation copies EncoderClassifier.classify_file, but accepts a binary file 
     object instead of a file path.
     """
+    pretrained_only = False
     classifier, cats = brains.brain(user) # gets a specific brain (classifier) associated with user
     if classifier is None:
         classifier = default_classifier
+        pretrained_only = True
     signal, sr = load_audio(in_file)
     waveform = classifier.audio_normalizer(signal, sr)
     batch = waveform.unsqueeze(0)
@@ -43,7 +45,7 @@ def predict(user: str, in_file: BinaryIO):
     emb = classifier.eval().encode_batch(batch, rel_length)
     probs = classifier.eval().mods.classifier(emb).squeeze()
     score, index = torch.max(probs, dim=-1)
-    if cats is None:
+    if pretrained_only:
         prediction = classifier.hparams.label_encoder.decode_torch(torch.tensor([index]))
         # Build a dictionary like {classname: probability} from tensor of probabilities
         # using the classifier's index to label dict 
