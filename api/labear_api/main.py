@@ -15,6 +15,8 @@ from loguru import logger
 
 # API
 from labear_api.cloud_connect import upload_many_blobs_from_stream_with_transfer_manager as upload_many_blobs_from_stream
+from labear_api.cloud_connect import upload_blob
+from labear_api.cloud_connect import storage_client_gc
 #import tempfile
 
 
@@ -22,6 +24,7 @@ from labear_api.cloud_connect import upload_many_blobs_from_stream_with_transfer
 # Cloud data
 BUCKET = "data_labear"
 PROJECT = "labear"
+STORAGE_CLIENT = storage_client_gc()
 
 
 #API 
@@ -127,7 +130,7 @@ async def submit(
         }
     }
     print(f"Attempt gc upload....")
-    upload_many_blobs_from_stream(bucket_name=BUCKET, files=files)
+    upload_many_blobs_from_stream(bucket_name=BUCKET, files=files, storaqge_client=STORAGE_CLIENT)
     
     metrics.post_records(response, DASHBOARD_LEARN)
     return response
@@ -152,16 +155,25 @@ async def monitor(
             ]
         }
     }
-
     # just do single (first) file for now
     # TODO handle multiple files
+    #upload_many_blobs_from_stream(bucket_name=BUCKET, files=files)
+
     file = files[0].file
+    file_name = files[0].filename
+    #upload_many_blobs_from_stream(bucket_name=BUCKET, files=[files[0]])
+
     probabilities, prediction, score  = ear.predict(user_id, file)
     response["prediction"] = {
         "probabilities": probabilities,
         "prediction": prediction,
         "score": score.item()
     }
+    if user_id == "debug":
+        destination_folder = 'debug/'
+        destination_name = file_name
+        upload_blob(BUCKET, file, destination_folder, destination_name, storage_client=STORAGE_CLIENT)
+
     metrics.post_records(response, DASHBOARD_MONITOR)
 
     return response
