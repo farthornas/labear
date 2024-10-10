@@ -10,6 +10,8 @@ import torch
 import tempfile
 from pydub import AudioSegment
 from labear_api.brain import Brains
+#from labear_api.cloud_connect import upload_blob
+
 
 default_classifier = EncoderClassifier.from_hparams(source="speechbrain/urbansound8k_ecapa", savedir="models/gurbansound8k_ecapa")    
 
@@ -25,6 +27,7 @@ def load_audio(file: BinaryIO):
         audio = AudioSegment.from_file(file, format='m4a')
         audio = audio[500:] # Remove first 0.5 second to omit blank signal at beginning of recording
         audio.export(tp, format='wav')
+        
         signal, sr = torchaudio.load(tp, channels_first=False)
     return signal, sr
 
