@@ -3,8 +3,12 @@ from google.cloud.storage import transfer_manager
 from google.oauth2 import service_account
 import os
 import json
+from pathlib import Path
 from json.decoder import JSONDecodeError
 from google.api_core.exceptions import NotFound
+from datetime import datetime
+from loguru import logger
+
 
 PROJECT = 'labear'
 
@@ -134,7 +138,7 @@ def storage_client_gc():
         credentials = service_account.Credentials.from_service_account_info(
         creds)
     except (KeyError, ValueError):
-        print('Loading credentials (Google service account) from JSON failed - will try default method from environment')
+        logger.info('Loading credentials (Google service account) from JSON failed - will try default method from environment')
         storage_client = storage.Client(project=PROJECT)
     else:
         storage_client = storage.Client(project=PROJECT, credentials=credentials)
@@ -143,7 +147,7 @@ def storage_client_gc():
 
 
 def upload_many_blobs_from_stream_with_transfer_manager(
-    bucket_name, files, workers=8
+    bucket_name, files, storaqge_client, workers=8,
 ):
     """Upload every file in a list to a bucket, concurrently in a process pool.
 
@@ -151,8 +155,6 @@ def upload_many_blobs_from_stream_with_transfer_manager(
     file (and other aspects of individual blob metadata), use
     transfer_manager.upload_many() instead.
     """
-
-    storage_client = storage_client_gc()
     
     bucket = storage_client.bucket(bucket_name)
 
@@ -164,11 +166,32 @@ def upload_many_blobs_from_stream_with_transfer_manager(
     #    # The results list is either `None` or an exception for each filename in
     #    # the input list, in order.
         if isinstance(result, Exception):
-            print(f"Failed to upload {file.name} due to exception: {result}")
+            logger.info(f"Failed to upload {file.filename} due to exception: {result}")
         else:
-            print(f"Uploaded {file.filename} to {bucket.name}.")
+            logger.info(f"Uploaded {file.filename} to {bucket.name}.")
 
-def download_blob(bucket_name, source_blob_name, destination_file_name):
+def upload_blob(bucket_name, file_obj, destination_folder_name, destination_file_name, storage_client):
+    """Uploads a file to the bucket."""
+    # Create the full GCS path (including the folder and file name)
+    gcs_file_path = os.path.join(destination_folder_name, destination_file_name)
+
+    # Check if the file already exists in GCS
+    bucket = storage_client.bucket(bucket_name)
+    blob = bucket.blob(gcs_file_path)
+
+    # Optional: set a generation-match precondition to avoid potential race conditions
+    # and data corruptions. The request to upload is aborted if the object's
+    # generation number does not match your precondition. For a destination
+    # object that does not yet exist, set the if_generation_match precondition to 0.
+    # If the destination object already exists in your bucket, set instead a
+    # generation-match precondition using its generation number.
+    blob.upload_from_file(file_obj, rewind=True)
+
+    logger.info(
+        f"File {destination_file_name} uploaded to {destination_folder_name}."
+    )
+
+def download_blob(bucket_name, source_blob_name, destination_file_name, storage_client):
     """Downloads a blob from the bucket."""
     # The ID of your GCS bucket
     # bucket_name = "your-bucket-name"
@@ -179,7 +202,6 @@ def download_blob(bucket_name, source_blob_name, destination_file_name):
     # The path to which the file should be downloaded
     # destination_file_name = "local/path/to/file"
 
-    storage_client = storage_client_gc()
 
     bucket = storage_client.bucket(bucket_name)
 
@@ -190,57 +212,92 @@ def download_blob(bucket_name, source_blob_name, destination_file_name):
     blob = bucket.blob(source_blob_name)
     blob.download_to_filename(destination_file_name)
 
-    print(
+    logger.info(
         "Downloaded storage object {} from bucket {} to local file {}.".format(
             source_blob_name, bucket_name, destination_file_name
         )
     )
 
-def gc_is_file(bucket_name, source_blob_name):
-    storage_client = storage_client_gc()
+def gc_is_file(bucket_name, source_blob_name, storage_client):
 
     bucket = storage_client.bucket(bucket_name)
 
     return storage.Blob(bucket=bucket, name=source_blob_name).exists(storage_client)
 
-def gc_list_blobs(bucket_name, prefix, delimiter=None):
-    storage_client = storage_client_gc()
+def gc_list_files_folders(bucket_name, prefix, storage_client, delimiter=None):
 
     bucket = storage_client.bucket(bucket_name)
     
     blobs = bucket.list_blobs(prefix=prefix, delimiter=delimiter)
-    blob_names = []
-    prefixes = []
+    files = []
+    folders = []
     for blob in blobs:
-        blob_names.append(blob.name)
+        files.append(blob.name)
     if delimiter:
         for pre in blobs.prefixes:
-            prefixes.append(pre)
+            folders.append(pre)
 
-    return blob_names, prefixes
+    return files, folders
 
-def gc_list_dirs(bucket_name, path):
+def get_latest_file_in_folder(bucket_name, folder_path, storage_client, file_extension=None, name_only=True):
+
+    # Initialize a Google Cloud Storage client
+
+    folder_path = f"{folder_path}/"
+    # Get the bucket
+    bucket = storage_client.get_bucket(bucket_name)
+    if file_extension:
+        logger.info(f"Checking for latest {file_extension} file in: {folder_path} from bucket: {bucket_name}")
+    else:
+        logger.info(f"Checking for latest file in: {folder_path} from bucket: {bucket_name}")
+
+    # List all the blobs (files) in the folder
+    blobs = bucket.list_blobs(prefix=folder_path)
+
+    # Initialize variables to store the latest file
+    latest_blob = None
+    latest_time = None
+
+    # Iterate through the blobs
+    # Filter files by the specific extension and store them along with their updated timestamps
+    if file_extension:
+        files = [(blob.name, blob.updated) for blob in blobs if blob.name.endswith(file_extension)]
+    else:
+        files = [(blob.name, blob.updated) for blob in blobs]
+
+    # Sort the files by their updated timestamp, and retrieve the latest one
+    if files:
+        latest_file = max(files, key=lambda x: x[1])
+
+        logger.info(f"Latest file: {latest_file[0]}, Last updated: {latest_file[1]}")
+        latest_file = Path(latest_file[0])
+        if name_only:
+            return latest_file.name
+        else:
+            return Path(latest_file[0])
+    else:
+        return None
+
+
+def gc_list_dirs(bucket_name, path, storage_client):
     if path[-1] != '/':
         path += '/'
-    blobs, dirs = gc_list_blobs(bucket_name=bucket_name, prefix=path, delimiter='/')
+    files, folders = gc_list_files_folders(bucket_name=bucket_name, prefix=path, storage_client=storage_client, delimiter='/')
     clean = []
-    if len(dirs) > 0:
-        for dir in dirs:
+    if len(folders) > 0:
+        for dir in folders:
             clean.append(dir.split(path)[-1])
     return clean
         
 def main():
 
-    print("Hello World!")
-    bucket_name = "data_labear"
-    dirs = gc_list_dirs(bucket_name=bucket_name, path='users')
-    users = [dir.strip('/') for dir in dirs]
-    
-    print(users)
-    #print(list(blobs))for prefix in blobs.prefixes:
-    #    print(prefix)
-    #print(f"Uploading file!")
-    #upload_many_blobs_from_stream_with_transfer_manager(bucket_name=bucket_name, files=['test_submit.wav'])
-
+    logger.info("Hello World!")
+  # Example usage
+    bucket_name = 'data_labear'
+    folder_path = 'users/g28/'  # Don't forget the trailing '/'
+    file_type = ".pt"
+    client = storage_client_gc()
+    latest_file = get_latest_file_in_folder(bucket_name, folder_path, client, file_extension=file_type)
+    logger.info(latest_file)
 if __name__ == "__main__":
     main()
