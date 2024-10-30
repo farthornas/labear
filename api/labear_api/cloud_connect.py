@@ -3,18 +3,10 @@ from google.cloud.storage import transfer_manager
 from google.oauth2 import service_account
 import os
 import json
-from pathlib import Path
-from json.decoder import JSONDecodeError
-from google.api_core.exceptions import NotFound
-from datetime import datetime
 from loguru import logger
 
 
 PROJECT = 'labear'
-
-TRANSFER_MANAGER_DEADLINE = None
-TRANSFER_MANAGER_SKIP_IF_EXISTS = False
-TRANSFER_MANAGER_RAISE_EXEPTION = False
 
 def storage_client_gc():
 
@@ -61,15 +53,13 @@ def upload_many_from_files(
     
     return transfer_manager.upload_many(
         file_blob_pairs,
-        skip_if_exists=TRANSFER_MANAGER_SKIP_IF_EXISTS,
+        skip_if_exists=False,
         upload_kwargs=None,
-        deadline=TRANSFER_MANAGER_DEADLINE,
-        raise_exception=TRANSFER_MANAGER_RAISE_EXEPTION,
+        deadline=None,
+        raise_exception=False,
         worker_type=transfer_manager.THREAD, # "thread" for smallish files, "process" for large files
         max_workers=transfer_manager.DEFAULT_MAX_WORKERS,
     )
-
-
 
 def upload_many(bucket_name, files, workers=8):
     bucket = STORAGE_CLIENT.bucket(bucket_name)
@@ -109,14 +99,5 @@ def download_blob(bucket_name, source_blob_name, destination_file_name):
         )
     )
 
-        
-def main():
-
-    logger.info("Hello World!")
-  # Example usage
-    bucket_name = 'data_labear'
-    folder_path = 'users/g28/'  # Don't forget the trailing '/'
-    file_type = ".pt"    
-    #upload_blob(bucket_name=bucket_name, file_obj='test_submit.wav', destination_folder_name=folder_path, destination_file_name='test_upload.wav')
 if __name__ == "__main__":
-    main()
+    print("Running main")

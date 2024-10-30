@@ -85,9 +85,7 @@ class Brains:
             latest_file = max(files, key=lambda f: f.stat().st_mtime)
             return latest_file.name
         return None
-
-def main():
-    brains = Brains()
-    classifier, classes = brains.brain("engine")       
+     
 if __name__ == "__main__":
-    main()
+    print("Running main")
+    

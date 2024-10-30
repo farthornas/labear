@@ -2,9 +2,7 @@ from typing import List
 
 from fastapi import FastAPI, File, UploadFile, Form
 from fastapi.responses import RedirectResponse
-import uvicorn
 import os
-import aiofiles
 from dataclasses import dataclass
 from influxdb_client_3 import InfluxDBClient3, Point
 from influxdb_client import InfluxDBClient
@@ -75,7 +73,6 @@ class Metrics:
                 writer.write(bucket=self.database, org=self.org, record=record, write_precision='ms')
 
     def post_data_point(self, data, application):
-        data = flatten(data)
         point = Point(application)
         for key, value in data.items():
             point.field(key, value)
@@ -149,7 +146,6 @@ async def monitor(
     # TODO handle multiple files
 
     file = files[0].file
-    file_name = files[0].filename
 
     probabilities, prediction, score  = ear.predict(user_id, file)
     response["prediction"] = {

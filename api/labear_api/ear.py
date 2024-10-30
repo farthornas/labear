@@ -10,8 +10,6 @@ import torch
 import tempfile
 from pydub import AudioSegment
 from labear_api.brain import Brains
-#from labear_api.cloud_connect import upload_blob
-
 
 default_classifier = EncoderClassifier.from_hparams(source="speechbrain/urbansound8k_ecapa", savedir="models/gurbansound8k_ecapa")    
 
@@ -58,11 +56,5 @@ def predict(user: str, in_file: BinaryIO):
         probabilities = {cats[i]: prob for i, prob in enumerate(probs.tolist())}
     return probabilities, prediction, score
 
-
-def main():
-
-    classifier, cats = brains.brain("g28_huawei")
-    pred = classifier.classify_file("/Users/jonas/Library/CloudStorage/OneDrive-UniversityofExeter/sound_recognition/api/labear_api/test_submit.wav")
-    print(pred)
 if __name__ == "__main__":
-    main()
+    print("Running main")
