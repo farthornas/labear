@@ -107,7 +107,7 @@ This will send a .wav to the api running at https://albinai.fly.dev and you shou
 
 For more details on launching a docker image check out: https://fly.io/docs/languages-and-frameworks/dockerfile/
 
-### Google Cloud 
+## Google Cloud 
 
 Google cloud should/is now used to store training data.
 The data is kept in a bucket on cloud storage:  
@@ -147,6 +147,26 @@ We also set the number of processes/threads to use in the upload.
 
 The performance impact of this value depends on the use case, but smaller files usually
 benefit from a higher number of threads.
+
+## Preparing, training and running finetuned models in the API.
+
+Running finetuned models in the API (fly.io) is still very much in development. 
+
+To train a new model data can be fetched from GCS where the raw data for training a model is located.
+For instance, the `engine` training data with raw recordings from two idling car engines + just silence is located under: [`data_labear/users/engine/data/raw/`]
+
+Once the raw data is downloaded it will need some preprocessing. The [`train.ipynb`] notebook has code to split up and put in designated folders. 
+
+Once the preprocessed data is ready the notebook [`train.ipynb`] can be executed and should produce a finetuned model. The model will be saved as [user]_[tag].pt
+The model will be accopanied by the classification categories for the model in [user]_cats.json.
+
+The .pt and .json file should then be uploaded to [data_labear/users/[user]/] on google cloud services. Which can also be done from the notbook [`train.ipynb`].
+
+The new model will be automatically downloaded and loaded into memory for specific user when the api is next rebooted [`fly machine restart`]. This will obviously be changed in the near future. 
+
+
+
+
 
 
 

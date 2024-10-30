@@ -2,26 +2,19 @@ from typing import List
 
 from fastapi import FastAPI, File, UploadFile, Form
 from fastapi.responses import RedirectResponse
-import uvicorn
 import os
-import aiofiles
 from dataclasses import dataclass
 from influxdb_client_3 import InfluxDBClient3, Point
-from influxdb_client.client.write_api import SYNCHRONOUS, ASYNCHRONOUS
 from influxdb_client import InfluxDBClient
-
-import labear_api.ear as ear
 from loguru import logger
 
-# API
-from labear_api.cloud_upload import upload_many_blobs_from_stream_with_transfer_manager as upload_many_blobs_from_stream
-#import tempfile
-
-
+import labear_api.ear as ear
+from labear_api.cloud_connect import upload_blob
 
 # Cloud data
 BUCKET = "data_labear"
-PROJECT = "labear"
+USER_DATA = "data/raw"
+GC_USERS = "users"
 
 
 #API 
@@ -80,7 +73,6 @@ class Metrics:
                 writer.write(bucket=self.database, org=self.org, record=record, write_precision='ms')
 
     def post_data_point(self, data, application):
-        data = flatten(data)
         point = Point(application)
         for key, value in data.items():
             point.field(key, value)
@@ -91,20 +83,20 @@ class Metrics:
 app = FastAPI()
 metrics = Metrics()
 
-
-async def file_handler(files, path):
-    for file in files:
-        out_file_path = os.path.join(path, str(file.filename))
-        async with aiofiles.open(out_file_path, "wb") as out_file:
-            content = await file.read()
-            result = await out_file.write(content)
-    return result
-
-
 def log_fileinfo(files: list[UploadFile]):
     logger.info("Files received:")
     for file in files:
         logger.info(f"{file.filename} ({file.size/1000:0.2f} KB)")
+        
+def gc_upload_files(user_id, files):
+    # just do single (first) file for now
+    # TODO handle multiple files
+    file = files[0].file
+    file_name = files[0].filename
+    destination_folder = f'{GC_USERS}/{user_id}/{USER_DATA}/' 
+    upload_blob(BUCKET, file, destination_folder, file_name)
+    logger.info(f"File {file_name} uploaded to {destination_folder}.")
+
 
 @app.post(LEARN)
 async def submit(
@@ -126,9 +118,7 @@ async def submit(
             ]
         }
     }
-    print(f"Attempt gc upload....")
-    upload_many_blobs_from_stream(bucket_name=BUCKET, files=files)
-    
+    gc_upload_files(user_id=user_id, files=files)
     metrics.post_records(response, DASHBOARD_LEARN)
     return response
 
@@ -152,16 +142,20 @@ async def monitor(
             ]
         }
     }
-
     # just do single (first) file for now
     # TODO handle multiple files
+
     file = files[0].file
-    probabilities, prediction, score  = ear.predict(file)
+
+    probabilities, prediction, score  = ear.predict(user_id, file)
     response["prediction"] = {
         "probabilities": probabilities,
         "prediction": prediction,
         "score": score.item()
     }
+    if user_id == "debug":
+        gc_upload_files(user_id=user_id, files=files)
+
     metrics.post_records(response, DASHBOARD_MONITOR)
 
     return response
@@ -170,3 +164,4 @@ async def monitor(
 @app.get("/")
 async def docs_redirect():
     return RedirectResponse(url="/docs")
+
