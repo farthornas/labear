@@ -1,0 +1,15 @@
+[tool.poetry]
+name = "labear-rpi"
+version = "0.1.0"
+description = ""
+authors = ["Karl Jonas Riisnaes <karljonasriisnaes@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+PyAudio = "^0.2.14"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
