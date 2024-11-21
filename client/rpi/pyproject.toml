@@ -8,6 +8,10 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.12"
 PyAudio = "^0.2.14"
+requests = "^2.32.3"
+pyopenssl = "^24.2.1"
+cryptography = "^43.0.3"
+sounddevice = "^0.5.1"
 
 
 [build-system]
