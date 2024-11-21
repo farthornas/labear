@@ -48,17 +48,14 @@ class RunFunctionAndExit(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
         logger.info("Request to show device input info...")
         # Call your function here
-        list_audio_input_info()
+        list_audio_devices()
         logger.info("Program will now exit")
 
         sys.exit(0)  # Exit immediately
 
 
-def list_audio_input_info():
-    audio = pyaudio.PyAudio()
-
-    for i in range(audio.get_device_count()):
-        f = audio.get_device_info_by_index(i)
+def list_audio_devices():
+    print(sounddevice.query_devices())
 
 def record_audio(output_filename, record_seconds, channels, rate, chunk):
     # Initialize pyaudio
@@ -118,7 +115,7 @@ def main():
     
     # Add arguments for customization
     parser.add_argument('-ld', "--listdevices", action=RunFunctionAndExit, nargs=0, 
-                        help="List devices and exit immediately.")
+                        help="List audio devices and exit immediately.")
     parser.add_argument("-o", "--output", type=str, default="output",
                         help="Output WAV file name (default: output)")
     parser.add_argument("-d", "--duration", type=int, default=5,
