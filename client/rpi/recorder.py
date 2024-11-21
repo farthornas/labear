@@ -9,6 +9,10 @@ import sounddevice
 import logging
 from logging.handlers import RotatingFileHandler
 
+LOG_FILE = "pi.log"
+LOG_SIZE = 1048576
+LOG_BACKUP_COUNT = 3
+
 def setup_size_based_logger(log_file, max_bytes, backup_count):
     """
     Sets up a logger that rolls over when the log file reaches a specified size.
@@ -18,7 +22,7 @@ def setup_size_based_logger(log_file, max_bytes, backup_count):
     :param backup_count: Number of backup files to keep.
     :return: Configured logger.
     """
-    logger = logging.getLogger("size_logger")
+    logger = logging.getLogger("pi_logger")
     logger.setLevel(logging.DEBUG)
 
     # Configure the RotatingFileHandler
@@ -36,7 +40,7 @@ def setup_size_based_logger(log_file, max_bytes, backup_count):
     logger.addHandler(handler)
     return logger
 
-logger = setup_size_based_logger("size_based.log", max_bytes=1048576, backup_count=3)
+logger = setup_size_based_logger(LOG_FILE, max_bytes=LOG_SIZE, backup_count=LOG_BACKUP_COUNT)
 
 
 
