@@ -146,8 +146,8 @@ async def monitor(
     # TODO handle multiple files
 
     file = files[0].file
-
-    probabilities, prediction, score  = ear.predict(user_id, file)
+    format = files[0].filename.split(".")[-1] 
+    probabilities, prediction, score  = ear.predict(user_id, file, format)
     response["prediction"] = {
         "probabilities": probabilities,
         "prediction": prediction,

@@ -15,21 +15,22 @@ default_classifier = EncoderClassifier.from_hparams(source="speechbrain/urbansou
 
 brains = Brains()
 
-def load_audio(file: BinaryIO):
+def load_audio(file: BinaryIO, format: str):
     """
     This implementation copies EncoderClassifier.load_audio, but accepts a binary file 
     object instead of a file path.
     """
     signal, sr = None, None
+            
     with tempfile.TemporaryFile() as tp:
-        audio = AudioSegment.from_file(file, format='m4a')
+        audio = AudioSegment.from_file(file, format=format)
         audio = audio[500:] # Remove first 0.5 second to omit blank signal at beginning of recording
         audio.export(tp, format='wav')
         
         signal, sr = torchaudio.load(tp, channels_first=False)
     return signal, sr
 
-def predict(user: str, in_file: BinaryIO):
+def predict(user: str, in_file: BinaryIO, format: str):
     """
     This implemetation copies EncoderClassifier.classify_file, but accepts a binary file 
     object instead of a file path.
@@ -39,7 +40,7 @@ def predict(user: str, in_file: BinaryIO):
     if classifier is None:
         classifier = default_classifier
         pretrained_only = True
-    signal, sr = load_audio(in_file)
+    signal, sr = load_audio(in_file, format)
     waveform = classifier.audio_normalizer(signal, sr)
     batch = waveform.unsqueeze(0)
     rel_length = torch.tensor([1.0])
