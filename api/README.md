@@ -54,6 +54,8 @@ Check that the api responds by next running `python /labear_api/test_api_submit.
 
 ## Fly.io
 
+UPDATE 04.12.2024: The fly.io instance has been temporary shut down for security purposes prior to making this repository public. As soon as some authetication is implemented the instance will be launched again.
+
 For now our chosen cloude service is Fly.io and we deploy the api-app on this service using the Docker container.
 For the detials check out [Fly.io](https://fly.io/docs/)
 
