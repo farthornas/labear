@@ -32,8 +32,6 @@ data
     └── fold9
 ```
 
-The appliance dataset can be downloaded through this link: https://drive.google.com/drive/folders/1-uixxV5xjxZHXrLLUJfmqVI0KperjJce?usp=drive_link
-
 The urbansound8K dataset can be downloaded here: https://urbansounddataset.weebly.com/urbansound8k.html
 
 
