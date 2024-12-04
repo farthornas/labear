@@ -1,0 +1,8 @@
+FROM python:3.12
+# Or any preferred Python version.
+RUN apt-get update
+RUN apt-get install libasound-dev libportaudio2 libportaudiocpp0 portaudio19-dev -y
+RUN pip install pyaudio requests
+WORKDIR /app
+COPY ./recorder.py ./
+ENTRYPOINT ["python", "./recorder.py"]
