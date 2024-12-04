@@ -62,7 +62,7 @@ a processable chunks for the ml-algorithm.
 
 ## A note on denoising the the soundscape
 
-Adam has played around a bit with some of the appliance sound files to see if its possible to destinguish the defining features of the sounds we want to detect. 
+Sound files might need de-noising to  destinguish the defining features of the sounds we want to detect. 
 Here is an image of the raw data converted to a spectrogram:
 ![alt text](Spectrogram.png)
 
@@ -70,9 +70,9 @@ And here is the heavily denoised spectrogram of the same file:
 
 ![alt text](Spectrogram_denoised.png)
 
-Maybe this is something we should explore to obtain stronger features in the spectrograms and so ease the task for the ML algorithm? How do we distinguish noise from signals of interrests though? 
+For certain applications de-noising might be needed to enhance features in the spectrograms and so ease the task for the ML algorithm? 
 
-We should look up the article by Ethan Sutin on sound detection using ML (`https://oreil.ly/747uv`)
+This is an intereting article by Ethan Sutin on sound detection using ML (`https://oreil.ly/747uv`)
 
 ## A note on synthetic data generation.
 Appliances datasets are currently small reducing the amount of traning and validation data available for the algorithm. 
