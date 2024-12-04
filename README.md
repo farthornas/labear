@@ -39,9 +39,9 @@ The urbansound8K dataset can be downloaded here: https://urbansounddataset.weebl
 The purpose of the project is to use old but functional 
 mobile phones to act as sound sensors in detecting the pressence or malfuncioning of an appliance. Sound samples from the phones will be analysed by an ML algorithm to detect abnormalities in the appliance  soundscape and the result will be presented as key metrics on a dashboard. Each user will build up a bank of appliances of their own choise by supplying recordings of the chosen appliance which the algoritm will train-on to detect key features. Each appliance in the users bank will then be available for continous monitoring. 
 
-Sound capture (KIVY):
+Sound capture (KIVY/Raspberry-pi):
 
-    Sound will be captured using the user operated kivy app running on the old smart phone used as the sensor device/endpoint. The user will register a user profile which will hold the users sound-bank of learned appliances and link to the users dashboard. 
+    Sound will be captured using the user operated kivy app running on the old smart phone or on a separate raspberry-pi used as the sensor device/endpoint. The user will register a user profile which will hold the users sound-bank of learned appliances and link to the users dashboard. 
 
     Sound is captured in two operational modes:
         
@@ -51,11 +51,11 @@ Sound capture (KIVY):
     
     After the sound has been captured the data will be uploaded to a server using the API.
 
-Data Transfer (FastAPI):
+Data Transfer and audio classification (FastAPI):
 
+    Larger recordings used for training is redirected to a users dedicated folder (Google cloud storage). 
+    The shorter recordings taken in monitoring mode is classified with outcomes forwarded to a Dashboard (Grafana)
 
-Data processing
-Monitoring 
 ## Data processing.
 applience_ears.ipynb contains the class AudioUtil which contains methods for pre-processing the data into 
 a processable chunks for the ml-algorithm. 
