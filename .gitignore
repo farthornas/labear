@@ -1,4 +1,5 @@
 data/
+
 .ipynb_checkpoints/
 .DS_Store
 urbansound8K
@@ -13,3 +14,5 @@ audio_cache
 *.buildozer
 *app_images
 *client/bin/
+*.log.*
+*.log
